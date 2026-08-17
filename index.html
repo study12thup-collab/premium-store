@@ -819,6 +819,9 @@
 </footer>
 
 <script>
+// =================== BACKEND API ===================
+const API_URL = 'https://premium-store-backend.vercel.app';
+
 // =================== DATA STORE ===================
 let products = [
   { id: 1, name: 'Premium Wireless Headphones', price: 2999, original_price: 4999, discount: 40, stock: 50, description: 'High quality wireless headphones with noise cancellation and 30 hour battery life.', images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500'] },
@@ -1111,8 +1114,8 @@ function renderCheckout() {
   if (coTotal) coTotal.textContent = '₹' + total.toLocaleString('en-IN');
 }
 
-// =================== ORDER PLACEMENT ===================
-function placeOrder() {
+// =================== ORDER PLACEMENT WITH CASHFREE ===================
+async function placeOrder() {
   const name = document.getElementById('c-name').value.trim();
   const phone = document.getElementById('c-phone').value.trim();
   const email = document.getElementById('c-email').value.trim();
@@ -1134,41 +1137,95 @@ function placeOrder() {
   if (!pincode.match(/^\d{6}$/)) return showErr('Pincode 6 digits ka hona chahiye');
   if (cart.length === 0) return showErr('Cart khali hai');
 
+  const payBtn = document.querySelector('.pay-btn');
+  payBtn.textContent = '⏳ Processing...';
+  payBtn.disabled = true;
+
   const { total } = getCartTotals();
-  const orderId = 'ORD-' + Date.now().toString(36).toUpperCase();
-  const order = {
-    order_id: orderId,
-    customer_name: name,
-    customer_phone: phone,
-    customer_email: email,
-    customer_address: address,
-    customer_city: city,
-    customer_state: state,
-    customer_pincode: pincode,
-    amount: total,
-    items: [...cart],
-    order_status: 'pending',
-    payment_status: 'pending',
-    created_at: new Date().toISOString(),
-  };
 
-  orders.unshift(order);
-  saveOrders();
-  cart = [];
-  saveCart();
+  try {
+    // Create order on backend
+    const res = await fetch(`${API_URL}/api/orders/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cart.map(i => ({ productId: i.id, quantity: i.quantity })),
+        customer: { name, phone, email, address, city, state, pincode },
+        amount: total,
+      })
+    });
 
-  // Show confirmation
-  document.getElementById('confirm-details').innerHTML = `
-    <h2>📋 Order Details</h2>
-    <div class="confirm-row"><span class="label">Order ID</span><span class="val" style="color:var(--orange);font-family:monospace">${orderId}</span></div>
-    <div class="confirm-row"><span class="label">Name</span><span class="val">${name}</span></div>
-    <div class="confirm-row"><span class="label">Phone</span><span class="val">${phone}</span></div>
-    <div class="confirm-row"><span class="label">Email</span><span class="val">${email}</span></div>
-    <div class="confirm-row"><span class="label">Address</span><span class="val">${address}, ${city}, ${state} - ${pincode}</span></div>
-    <div class="confirm-row"><span class="label">Amount</span><span class="val" style="color:var(--orange)">₹${total.toLocaleString('en-IN')}</span></div>
-    <div class="confirm-row"><span class="label">Status</span><span class="val status-paid">✅ Order Placed</span></div>`;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Order create nahi hua');
 
-  showPage('confirmation');
+    // Save order ID for later
+    sessionStorage.setItem('orderId', data.orderId);
+    sessionStorage.setItem('cfOrderId', data.cfOrderId);
+    sessionStorage.setItem('orderCustomer', JSON.stringify({ name, phone, email, address, city, state, pincode }));
+    sessionStorage.setItem('orderAmount', total);
+
+    // Load Cashfree SDK and open payment
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.onload = () => {
+      const cashfree = Cashfree({ mode: 'production' });
+      cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: '_self',
+      });
+    };
+    document.head.appendChild(script);
+
+    // Clear cart
+    cart = [];
+    saveCart();
+
+  } catch (err) {
+    showErr(err.message || 'Kuch error aaya, dobara try karo');
+    payBtn.textContent = '🛒 Order Place Karo';
+    payBtn.disabled = false;
+  }
+}
+
+// =================== PAYMENT VERIFICATION ===================
+async function verifyPayment() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const status = urlParams.get('status');
+  const orderId = sessionStorage.getItem('orderId');
+  const cfOrderId = sessionStorage.getItem('cfOrderId');
+
+  if (status === 'success' && orderId) {
+    try {
+      const res = await fetch(`${API_URL}/api/orders/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, cfOrderId })
+      });
+      const data = await res.json();
+
+      const customer = JSON.parse(sessionStorage.getItem('orderCustomer') || '{}');
+      const amount = sessionStorage.getItem('orderAmount') || 0;
+
+      document.getElementById('confirm-details').innerHTML = `
+        <h2>📋 Order Details</h2>
+        <div class="confirm-row"><span class="label">Order ID</span><span class="val" style="color:var(--orange);font-family:monospace">${orderId}</span></div>
+        <div class="confirm-row"><span class="label">Name</span><span class="val">${customer.name || ''}</span></div>
+        <div class="confirm-row"><span class="label">Phone</span><span class="val">${customer.phone || ''}</span></div>
+        <div class="confirm-row"><span class="label">Address</span><span class="val">${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''} - ${customer.pincode || ''}</span></div>
+        <div class="confirm-row"><span class="label">Amount</span><span class="val" style="color:var(--orange)">₹${Number(amount).toLocaleString('en-IN')}</span></div>
+        <div class="confirm-row"><span class="label">Payment</span><span class="val status-paid">✅ ${data.success ? 'Paid' : 'Pending'}</span></div>`;
+
+      showPage('confirmation');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      sessionStorage.removeItem('orderId');
+      sessionStorage.removeItem('cfOrderId');
+      sessionStorage.removeItem('orderCustomer');
+      sessionStorage.removeItem('orderAmount');
+    } catch(e) {
+      showPage('confirmation');
+    }
+  }
 }
 
 // =================== ADMIN ===================
@@ -1336,9 +1393,26 @@ function resetTimer() {
 
 slideTimer = setInterval(nextSlide, 4000);
 
+// =================== LOAD PRODUCTS FROM BACKEND ===================
+async function loadProducts() {
+  try {
+    const res = await fetch(`${API_URL}/api/products`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        products = data;
+      }
+    }
+  } catch(e) {
+    console.log('Using local products');
+  }
+  renderProductGrids();
+}
+
 // =================== INIT ===================
 updateCartUI();
-renderProductGrids();
+loadProducts();
+verifyPayment();
 </script>
 </body>
 </html>

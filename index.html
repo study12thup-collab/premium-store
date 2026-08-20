@@ -905,7 +905,10 @@ function productCardHTML(p) {
           <span class="price">₹${p.price.toLocaleString('en-IN')}</span>
           ${disc > 0 ? `<span class="price-old">₹${orig.toLocaleString('en-IN')}</span><span class="price-save">Save ₹${save.toLocaleString('en-IN')}</span>` : ''}
         </div>
-        <button class="add-btn" onclick="event.stopPropagation(); addToCart(${p.id}, 1)">🛒 Add to Cart</button>
+        <div style="display:flex;gap:8px">
+          <button class="add-btn" style="flex:1" onclick="event.stopPropagation(); addToCart(${p.id}, 1)">🛒 Add to Cart</button>
+          <button class="add-btn" style="flex:1;background:linear-gradient(to right,#c2410c,#ea580c)" onclick="event.stopPropagation(); addToCart(${p.id}, 1); setTimeout(()=>showPage('checkout'),300)">⚡ Buy Now</button>
+        </div>
       </div>
     </div>`;
 }

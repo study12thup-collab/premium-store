@@ -1208,19 +1208,23 @@ async function placeOrder() {
     saveCart();
 
     if (cfData.paymentSessionId) {
-      // Load Cashfree and open payment
-      const script = document.createElement('script');
-      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
-      script.onload = () => {
-        const cashfree = Cashfree({ mode: 'production' });
-        cashfree.checkout({
-          paymentSessionId: cfData.paymentSessionId,
-          redirectTarget: '_self',
-        });
-      };
-      document.head.appendChild(script);
+      // Check if Cashfree already loaded
+      if (window.Cashfree) {
+        const cashfree = window.Cashfree({ mode: 'production' });
+        cashfree.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+        document.head.appendChild(script);
+        script.onload = () => {
+          const cashfree = window.Cashfree({ mode: 'production' });
+          cashfree.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
+        };
+        script.onerror = () => {
+          showOrderConfirmation(orderId, name, phone, email, address, city, state, pincode, total);
+        };
+      }
     } else {
-      // Order saved, show confirmation even without payment
       showOrderConfirmation(orderId, name, phone, email, address, city, state, pincode, total);
     }
 
@@ -1424,6 +1428,13 @@ function renderAdminProducts() {
       </div>
     </div>`).join('');
 }
+
+// =================== PRELOAD CASHFREE SDK ===================
+(function() {
+  const script = document.createElement('script');
+  script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+  document.head.appendChild(script);
+})();
 
 // =================== SLIDER ===================
 let slideIndex = 0;

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Premium Store - Shop Premium Products Online</title>
   <meta name="description" content="Premium online store with authentic products" />
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -1208,21 +1209,15 @@ async function placeOrder() {
     saveCart();
 
     if (cfData.paymentSessionId) {
-      // Check if Cashfree already loaded
-      if (window.Cashfree) {
+      try {
         const cashfree = window.Cashfree({ mode: 'production' });
-        cashfree.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
-      } else {
-        const script = document.createElement('script');
-        script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
-        document.head.appendChild(script);
-        script.onload = () => {
-          const cashfree = window.Cashfree({ mode: 'production' });
-          cashfree.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
-        };
-        script.onerror = () => {
-          showOrderConfirmation(orderId, name, phone, email, address, city, state, pincode, total);
-        };
+        await cashfree.checkout({
+          paymentSessionId: cfData.paymentSessionId,
+          redirectTarget: '_self',
+        });
+      } catch(payErr) {
+        console.error('Cashfree error:', payErr);
+        showOrderConfirmation(orderId, name, phone, email, address, city, state, pincode, total);
       }
     } else {
       showOrderConfirmation(orderId, name, phone, email, address, city, state, pincode, total);

@@ -260,6 +260,11 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 .guarantee-strip{background:linear-gradient(90deg,#ecfdf5,#d1fae5);border-top:1px solid #a7f3d0;border-bottom:1px solid #a7f3d0;padding:12px 16px;text-align:center;color:#065f46;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
 .pcard{animation:bounce-in .5s ease both}
 .badge-shine{background:linear-gradient(90deg,var(--accent) 25%,#fde68a 50%,var(--accent) 75%);background-size:200% 100%;animation:shimmer 3s linear infinite}
+.chart-row{display:flex;align-items:flex-end;gap:8px;height:140px;padding:0 4px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.chart-bar{width:100%;max-width:40px;background:linear-gradient(180deg,var(--primary-light),var(--primary));border-radius:6px 6px 0 0;transition:height .4s ease;min-height:4px}
+.chart-label{color:#9ca3af;font-size:10px;margin-top:8px}
+.chart-value{color:#fff;font-size:10px;font-weight:700;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -422,6 +427,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     <div class="admin-header"><h1>⚙️ Admin Dashboard</h1><button class="logout-btn" onclick="showPage('home')">🚪 Logout</button></div>
     <div class="admin-tabs">
       <button class="admin-tab active" id="tab-dashboard" onclick="adminTab('dashboard')">📊 Dashboard</button>
+      <button class="admin-tab" id="tab-analytics" onclick="adminTab('analytics')">📈 Analytics</button>
       <button class="admin-tab" id="tab-orders" onclick="adminTab('orders')">📦 Orders</button>
       <button class="admin-tab" id="tab-products" onclick="adminTab('products')">🛍️ Products</button>
     </div>
@@ -438,6 +444,24 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
           <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recent-orders"></tbody></table></div>
         </div>
       </div>
+      <!-- Analytics Tab -->
+      <div id="admin-analytics" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-card stat-blue"><div class="stat-label">Conversion (Paid/Total)</div><div class="stat-val" id="an-conv">0%</div></div>
+          <div class="stat-card stat-green"><div class="stat-label">Avg Order Value</div><div class="stat-val" id="an-aov">₹0</div></div>
+          <div class="stat-card stat-purple"><div class="stat-label">This Week</div><div class="stat-val" id="an-week">₹0</div></div>
+          <div class="stat-card stat-orange"><div class="stat-label">This Month</div><div class="stat-val" id="an-month">₹0</div></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header"><h3>📅 Last 7 Days Revenue</h3></div>
+          <div style="padding:18px" id="an-chart"></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header"><h3>🏆 Top Selling Products</h3></div>
+          <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead><tbody id="an-top-products"></tbody></table></div>
+        </div>
+      </div>
+
       <div id="admin-orders" style="display:none">
         <input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders(this.value)"/>
         <div class="admin-card">
@@ -447,10 +471,10 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
       <div id="admin-products" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h3 style="color:#fff;font-size:16px;font-weight:700">Products</h3>
-          <button class="add-product-btn" onclick="toggleProductForm()">+ Add Product</button>
+          <button class="add-product-btn" onclick="resetProductForm();toggleProductForm()">+ Add Product</button>
         </div>
         <div class="product-form" id="p-form" style="display:none">
-          <h3>➕ Add New Digital Product</h3>
+          <h3 id="p-form-title">➕ Add New Digital Product</h3>
           <div class="form-row">
             <div class="form-group"><label>Product Name</label><input type="text" id="p-name" placeholder="e.g. Complete Guide to..."/></div>
             <div class="form-group"><label>Type</label><select id="p-type"><option value="ebook">Ebook</option><option value="course">Course</option><option value="template">Template</option><option value="software">Software</option></select></div>
@@ -465,7 +489,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
           </div>
           <div class="form-group"><label>Delivery Link (Google Drive / Download URL)</label><input type="text" id="p-delivery" placeholder="https://drive.google.com/..."/></div>
           <div class="form-group"><label>Description</label><textarea id="p-desc" rows="3" placeholder="What buyer gets..."></textarea></div>
-          <button class="save-btn" onclick="saveProduct()">✅ Save Product</button>
+          <button class="save-btn" id="p-save-btn" onclick="saveProduct()">✅ Save Product</button>
           <button class="cancel-btn" onclick="toggleProductForm()">Cancel</button>
         </div>
         <div class="products-grid-admin" id="admin-products-grid"></div>
@@ -502,6 +526,7 @@ let products = [];
 let cart = JSON.parse(localStorage.getItem('ds_cart') || '[]');
 let orders = [];
 let currentProduct = null;
+let editingProductId = null;
 
 const defaultProducts = [
   { id: 1, name: 'Zero Investment ₹20,000 Income Guide', product_type: 'ebook', price: 149, original_price: 4999, discount: 97, description: '65+ proven methods to earn online without any investment. Complete step-by-step Hindi/English guide.', images: ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500'], delivery_link: '#' },
@@ -694,6 +719,7 @@ async function placeOrder() {
       })
     });
     const cfData = await cfRes.json();
+    console.log('Cashfree response:', cfData);
     if (cfData.paymentSessionId && window.Cashfree) {
       sessionStorage.setItem('pendingOrder', JSON.stringify({ orderId, name, email, phone, amount: total, deliveryLink }));
       cart = []; saveCart();
@@ -805,15 +831,41 @@ function viewOrder(orderId) {
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
 function adminTab(tab) {
-  ['dashboard','orders','products'].forEach(t => {
+  ['dashboard','analytics','orders','products'].forEach(t => {
     document.getElementById('admin-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
+  if (tab === 'analytics') renderAnalytics();
 }
 
 function toggleProductForm() {
   const f = document.getElementById('p-form');
   f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function editProduct(id) {
+  const p = products.find(x => x.id == id);
+  if (!p) return;
+  editingProductId = id;
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-type').value = p.product_type || 'ebook';
+  document.getElementById('p-price').value = p.price || '';
+  document.getElementById('p-orig').value = p.original_price || '';
+  document.getElementById('p-disc').value = p.discount || 0;
+  document.getElementById('p-img').value = (p.images && p.images[0]) || '';
+  document.getElementById('p-delivery').value = p.delivery_link || '';
+  document.getElementById('p-desc').value = p.description || '';
+  document.getElementById('p-form-title').textContent = '✏️ Edit Product';
+  document.getElementById('p-save-btn').textContent = '✅ Update Product';
+  document.getElementById('p-form').style.display = 'block';
+  document.getElementById('p-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetProductForm() {
+  editingProductId = null;
+  document.getElementById('p-form-title').textContent = '➕ Add New Digital Product';
+  document.getElementById('p-save-btn').textContent = '✅ Save Product';
+  ['p-name','p-price','p-orig','p-disc','p-img','p-delivery','p-desc'].forEach(id => document.getElementById(id).value = '');
 }
 
 async function saveProduct() {
@@ -827,15 +879,25 @@ async function saveProduct() {
   const desc = document.getElementById('p-desc').value.trim();
   if (!name || !price) { alert('Name and price required!'); return; }
 
-  const newP = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: img ? [img] : [], delivery_link: delivery, published: true, stock: 999999 };
-  const saved = await sb.post('products', newP);
-  if (saved) {
-    toast('✅ Product saved!');
-    newP.id = Date.now();
-    products.push(newP);
-    renderGrid(); renderAdminProducts(); toggleProductForm();
-    ['p-name','p-price','p-orig','p-disc','p-img','p-delivery','p-desc'].forEach(id => document.getElementById(id).value = '');
-  } else { alert('Save failed — try again'); }
+  const productData = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: img ? [img] : [], delivery_link: delivery, published: true, stock: 999999 };
+
+  if (editingProductId) {
+    const ok = await sb.patch('products', `id=eq.${editingProductId}`, productData);
+    if (ok) {
+      toast('✅ Product updated!');
+      const idx = products.findIndex(p => p.id == editingProductId);
+      if (idx > -1) products[idx] = { ...products[idx], ...productData };
+      renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
+    } else { alert('Update failed — try again'); }
+  } else {
+    const saved = await sb.post('products', productData);
+    if (saved) {
+      toast('✅ Product saved!');
+      productData.id = Date.now();
+      products.push(productData);
+      renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
+    } else { alert('Save failed — try again'); }
+  }
 }
 
 async function deleteProduct(id) {
@@ -854,9 +916,60 @@ function renderAdminProducts() {
       <div class="product-admin-body">
         <div class="product-admin-name">${p.name}</div>
         <div class="product-admin-price">₹${p.price.toLocaleString('en-IN')}</div>
-        <button class="delete-btn" onclick="deleteProduct(${p.id})">🗑️ Delete</button>
+        <div style="display:flex;gap:6px">
+          <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct(${p.id})">✏️ Edit</button>
+          <button class="delete-btn" style="flex:1" onclick="deleteProduct(${p.id})">🗑️</button>
+        </div>
       </div>
     </div>`).join('');
+}
+
+function renderAnalytics() {
+  const paid = orders.filter(o => o.payment_status === 'paid');
+  const conv = orders.length ? Math.round((paid.length / orders.length) * 100) : 0;
+  const totalRev = paid.reduce((s, o) => s + (o.amount || 0), 0);
+  const aov = paid.length ? Math.round(totalRev / paid.length) : 0;
+
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+  const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30);
+  const weekRev = paid.filter(o => o.created_at && new Date(o.created_at) >= weekAgo).reduce((s, o) => s + (o.amount || 0), 0);
+  const monthRev = paid.filter(o => o.created_at && new Date(o.created_at) >= monthAgo).reduce((s, o) => s + (o.amount || 0), 0);
+
+  document.getElementById('an-conv').textContent = conv + '%';
+  document.getElementById('an-aov').textContent = '₹' + aov.toLocaleString('en-IN');
+  document.getElementById('an-week').textContent = '₹' + weekRev.toLocaleString('en-IN');
+  document.getElementById('an-month').textContent = '₹' + monthRev.toLocaleString('en-IN');
+
+  // Last 7 days chart
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    const dayStr = d.toISOString().split('T')[0];
+    const dayRev = paid.filter(o => o.created_at && o.created_at.startsWith(dayStr)).reduce((s, o) => s + (o.amount || 0), 0);
+    days.push({ label: d.toLocaleDateString('en-IN', { weekday: 'short' }), rev: dayRev });
+  }
+  const maxRev = Math.max(...days.map(d => d.rev), 1);
+  document.getElementById('an-chart').innerHTML = `<div class="chart-row">${days.map(d => `
+    <div class="chart-bar-wrap">
+      <div class="chart-value">₹${d.rev >= 1000 ? Math.round(d.rev/1000)+'k' : d.rev}</div>
+      <div class="chart-bar" style="height:${Math.max((d.rev / maxRev) * 100, 3)}%"></div>
+      <div class="chart-label">${d.label}</div>
+    </div>`).join('')}</div>`;
+
+  // Top products
+  const productSales = {};
+  paid.forEach(o => {
+    (o.items || []).forEach(item => {
+      const key = item.name || 'Unknown';
+      if (!productSales[key]) productSales[key] = { units: 0, revenue: 0 };
+      productSales[key].units += (item.quantity || 1);
+      productSales[key].revenue += (item.price || 0) * (item.quantity || 1);
+    });
+  });
+  const topProducts = Object.entries(productSales).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10);
+  document.getElementById('an-top-products').innerHTML = topProducts.map(([name, d], i) => `
+    <tr><td>${i + 1}</td><td>${name}</td><td>${d.units}</td><td>₹${d.revenue.toLocaleString('en-IN')}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:20px">No sales data yet</td></tr>';
 }
 
 init();

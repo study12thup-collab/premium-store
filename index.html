@@ -240,6 +240,26 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 .footer-bottom{border-top:1px solid #27273f;padding-top:18px;text-align:center;font-size:12px;max-width:1100px;margin:0 auto}
 .admin-footer-link{display:block;text-align:center;margin-top:12px}
 .admin-footer-link a{color:#4b4b6b;font-size:12px}
+/* HERO ANIMATIONS */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}50%{box-shadow:0 0 0 14px rgba(245,158,11,0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes bounce-in{0%{opacity:0;transform:scale(.8)}60%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+.hero-content>*{animation:fadeInUp .7s ease both}
+.hero-content .hero-badge{animation-delay:.05s}
+.hero-content h1{animation-delay:.15s}
+.hero-content p{animation-delay:.25s}
+.hero-content .hero-btn{animation-delay:.35s;animation:fadeInUp .7s ease both,pulse-glow 2.5s ease-in-out infinite 1.2s}
+.hero-content .trust-row{animation-delay:.45s}
+.float-emoji{position:absolute;font-size:36px;opacity:.5;animation:float 5s ease-in-out infinite}
+.fe1{top:14%;left:8%;animation-delay:0s}
+.fe2{top:60%;left:4%;animation-delay:1.2s;font-size:26px}
+.fe3{top:20%;right:9%;animation-delay:.6s}
+.fe4{top:65%;right:6%;animation-delay:1.8s;font-size:28px}
+.guarantee-strip{background:linear-gradient(90deg,#ecfdf5,#d1fae5);border-top:1px solid #a7f3d0;border-bottom:1px solid #a7f3d0;padding:12px 16px;text-align:center;color:#065f46;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.pcard{animation:bounce-in .5s ease both}
+.badge-shine{background:linear-gradient(90deg,var(--accent) 25%,#fde68a 50%,var(--accent) 75%);background-size:200% 100%;animation:shimmer 3s linear infinite}
 </style>
 </head>
 <body>
@@ -266,8 +286,12 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 <!-- ===== HOME ===== -->
 <div class="page active" id="page-home">
   <div class="hero">
+    <span class="float-emoji fe1">📖</span>
+    <span class="float-emoji fe2">🎓</span>
+    <span class="float-emoji fe3">💡</span>
+    <span class="float-emoji fe4">✨</span>
     <div class="hero-content">
-      <div class="hero-badge">🔥 DIGITAL PRODUCTS</div>
+      <div class="hero-badge badge-shine" style="color:#1a1a1a">🔥 DIGITAL PRODUCTS</div>
       <h1>Ebooks, Courses & Templates — Delivered Instantly</h1>
       <p>Pay once, get instant access. No shipping, no waiting — download or access immediately.</p>
       <a class="hero-btn" href="#" onclick="document.getElementById('products-section').scrollIntoView({behavior:'smooth'})">Browse Products →</a>
@@ -278,6 +302,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
       </div>
     </div>
   </div>
+  <div class="guarantee-strip">🛡️ 100% Money-Back Guarantee — Not satisfied? Get a full refund, no questions asked.</div>
 
   <div class="section" id="products-section">
     <div class="section-header">
@@ -289,9 +314,9 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 
   <div class="why-section">
     <div class="why-grid">
+      <div class="why-card"><div class="why-icon">🛡️</div><h3>Money-Back Guarantee</h3><p>7-day full refund policy</p></div>
       <div class="why-card"><div class="why-icon">⚡</div><h3>Instant Delivery</h3><p>Access right after payment</p></div>
       <div class="why-card"><div class="why-icon">🔒</div><h3>Secure Checkout</h3><p>Encrypted payment gateway</p></div>
-      <div class="why-card"><div class="why-icon">💯</div><h3>Quality Content</h3><p>Carefully crafted products</p></div>
       <div class="why-card"><div class="why-icon">🎧</div><h3>Support Included</h3><p>We're here to help</p></div>
     </div>
   </div>
@@ -352,6 +377,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
       <div class="form-group"><label>Mobile Number <span class="req">*</span></label><input type="tel" id="c-phone" placeholder="10 digit number" maxlength="10"/></div>
       <button class="pay-btn" onclick="placeOrder()" id="pay-btn">🔒 Pay ₹<span id="pay-amount">0</span> & Get Instant Access</button>
       <div class="secure-note">🔒 Secured by Cashfree Payments</div>
+      <div class="secure-note" style="margin-top:6px">🛡️ 7-Day Money-Back Guarantee</div>
     </div>
   </div>
 </div>
@@ -534,11 +560,11 @@ function getTotal() { return cart.reduce((s, i) => s + i.price, 0); }
 
 const typeIcon = { ebook: '📕', course: '🎓', template: '📄', software: '💾' };
 
-function productCard(p) {
+function productCard(p, idx) {
   const disc = p.discount || 0;
   const orig = p.original_price || p.price;
   const img = (p.images && p.images[0]) ? `<img src="${p.images[0]}" alt="${p.name}" onerror="this.style.display='none'"/>` : (typeIcon[p.product_type] || '📦');
-  return `<div class="pcard" onclick="openProduct(${p.id})">
+  return `<div class="pcard" style="animation-delay:${(idx||0)*0.08}s" onclick="openProduct(${p.id})">
     <div class="pcard-img">${img}<span class="type-badge">${p.product_type || 'ebook'}</span>${disc > 0 ? `<span class="disc-badge">-${disc}%</span>` : ''}</div>
     <div class="pcard-body">
       <div class="pcard-name">${p.name}</div>
@@ -551,7 +577,7 @@ function productCard(p) {
 
 function renderGrid() {
   const g = document.getElementById('grid-products');
-  if (g) g.innerHTML = products.map(productCard).join('');
+  if (g) g.innerHTML = products.map((p,i) => productCard(p,i)).join('');
 }
 
 function openProduct(id) {
@@ -580,6 +606,11 @@ function openProduct(id) {
       </ul>
       <button class="btn-buy-large" onclick="buyNow(${p.id})">⚡ Buy Now — ₹${p.price.toLocaleString('en-IN')}</button>
       <div class="instant-note">⚡ You'll get access immediately after payment</div>
+      <div style="margin-top:16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:20px;margin-bottom:4px">🛡️</div>
+        <div style="font-weight:700;font-size:13px;color:#065f46">7-Day Money-Back Guarantee</div>
+        <div style="font-size:12px;color:#059669">Not satisfied? Get a full refund, no questions asked.</div>
+      </div>
     </div>`;
   showPage('detail');
 }

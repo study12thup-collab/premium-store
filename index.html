@@ -720,14 +720,21 @@ async function placeOrder() {
     });
     const cfData = await cfRes.json();
     console.log('Cashfree response:', cfData);
+
     if (cfData.paymentSessionId && window.Cashfree) {
       sessionStorage.setItem('pendingOrder', JSON.stringify({ orderId, name, email, phone, amount: total, deliveryLink }));
       cart = []; saveCart();
       const cf = window.Cashfree({ mode: 'production' });
       cf.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
       return;
+    } else {
+      // Show the actual error so we can debug without console access
+      const debugMsg = cfData.error || cfData.message || JSON.stringify(cfData).substring(0, 200) || 'Unknown error';
+      alert('⚠️ Payment gateway error:\n\n' + debugMsg + '\n\nOrder saved, but redirecting without payment. Please screenshot this and share.');
     }
-  } catch(e) { console.log(e); }
+  } catch(e) {
+    alert('⚠️ Payment connection error:\n\n' + e.message + '\n\nPlease screenshot this and share.');
+  }
 
   cart = []; saveCart();
   showDelivery(orderId, name, email, phone, total, deliveryLink);

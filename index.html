@@ -702,7 +702,7 @@ async function placeOrder() {
   const deliveryLink = cart[0].delivery_link || '#';
 
   try {
-    await sb.post('orders', {
+    await sb.post('digital_orders', {
       order_id: orderId, customer_name: name, customer_email: email, customer_phone: phone,
       amount: total, items: cart.map(i => ({ id: i.id, name: i.name, price: i.price })),
       payment_status: 'pending', order_status: 'pending',
@@ -756,7 +756,7 @@ function checkPaymentReturn() {
   if (params.get('status') === 'success') {
     const pending = JSON.parse(sessionStorage.getItem('pendingOrder') || 'null');
     if (pending) {
-      sb.patch('orders', `order_id=eq.${pending.orderId}`, { payment_status: 'paid', order_status: 'delivered' });
+      sb.patch('digital_orders', `order_id=eq.${pending.orderId}`, { payment_status: 'paid', order_status: 'delivered' });
       window.history.replaceState({}, '', window.location.pathname);
       showDelivery(pending.orderId, pending.name, pending.email, pending.phone, pending.amount, pending.deliveryLink);
       sessionStorage.removeItem('pendingOrder');
@@ -773,7 +773,7 @@ function adminLogin() {
 }
 
 async function loadAdmin() {
-  orders = await sb.get('orders');
+  orders = await sb.get('digital_orders');
   if (!orders || orders.error) orders = [];
   renderStats(); renderRecentOrders(); renderAllOrders(); renderAdminProducts();
 }
@@ -815,7 +815,7 @@ function searchOrders(q) {
 }
 
 async function updateOrderStatus(orderId, status) {
-  await sb.patch('orders', `order_id=eq.${orderId}`, { order_status: status });
+  await sb.patch('digital_orders', `order_id=eq.${orderId}`, { order_status: status });
   const o = orders.find(x => x.order_id === orderId);
   if (o) o.order_status = status;
   renderStats(); renderRecentOrders();

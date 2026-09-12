@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Your Ebook — Secure Viewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-touch-callout:none}
+body{background:#1a1a2e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+#topbar{background:#0f0f17;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+#topbar h1{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.page-nav{display:flex;align-items:center;gap:10px}
+.nav-btn{background:#6d28d9;color:#fff;border:none;width:34px;height:34px;border-radius:8px;font-size:16px;font-weight:700}
+.nav-btn:disabled{opacity:.3}
+#page-info{font-size:13px;font-weight:700;min-width:60px;text-align:center}
+#viewer-container{padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px;min-height:80vh}
+canvas{max-width:100%;box-shadow:0 8px 30px rgba(0,0,0,.4);border-radius:6px}
+#status{color:#fff;text-align:center;padding:60px 20px}
+#status .icon{font-size:50px;margin-bottom:16px}
+#status h2{font-size:18px;margin-bottom:8px}
+#status p{color:#9ca3af;font-size:14px}
+.watermark{position:fixed;bottom:16px;right:16px;color:rgba(255,255,255,.15);font-size:11px;pointer-events:none;z-index:40}
+@media print{body{display:none !important}}
+</style>
+</head>
+<body oncontextmenu="return false">
+
+<div id="topbar" style="display:none">
+  <h1 id="doc-title">Loading...</h1>
+  <div class="page-nav">
+    <button class="nav-btn" id="prev-btn" onclick="prevPage()">‹</button>
+    <span id="page-info">- / -</span>
+    <button class="nav-btn" id="next-btn" onclick="nextPage()">›</button>
+  </div>
+</div>
+
+<div id="viewer-container">
+  <div id="status">
+    <div class="icon">🔒</div>
+    <h2>Verifying your purchase...</h2>
+    <p>Please wait while we confirm your payment</p>
+  </div>
+</div>
+
+<div class="watermark" id="watermark"></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const API_URL = 'https://premium-store-backend.vercel.app';
+let pdfDoc = null;
+let currentPage = 1;
+let totalPages = 0;
+let rendering = false;
+
+function getOrderId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('order');
+}
+
+async function init() {
+  const orderId = getOrderId();
+  const statusEl = document.getElementById('status');
+
+  if (!orderId) {
+    statusEl.innerHTML = '<div class="icon">❌</div><h2>Invalid Access</h2><p>No order ID provided</p>';
+    return;
+  }
+
+  document.getElementById('watermark').textContent = 'Order: ' + orderId;
+
+  try {
+    const url = `${API_URL}/api/access-file/${orderId}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      statusEl.innerHTML = `<div class="icon">🔒</div><h2>Access Denied</h2><p>${err.error || 'Payment not verified or file not found'}</p>`;
+      return;
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    pdfDoc = await loadingTask.promise;
+    totalPages = pdfDoc.numPages;
+
+    statusEl.style.display = 'none';
+    document.getElementById('topbar').style.display = 'flex';
+    document.getElementById('doc-title').textContent = 'Your Ebook';
+
+    renderPage(1);
+  } catch (e) {
+    console.error(e);
+    statusEl.innerHTML = '<div class="icon">⚠️</div><h2>Failed to Load</h2><p>' + e.message + '</p>';
+  }
+}
+
+async function renderPage(num) {
+  if (rendering) return;
+  rendering = true;
+  currentPage = num;
+
+  const page = await pdfDoc.getPage(num);
+  const viewport = page.getViewport({ scale: Math.min(1.5, window.innerWidth / page.getViewport({scale:1}).width * 1.3) });
+
+  const container = document.getElementById('viewer-container');
+  container.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  container.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  document.getElementById('page-info').textContent = `${num} / ${totalPages}`;
+  document.getElementById('prev-btn').disabled = num <= 1;
+  document.getElementById('next-btn').disabled = num >= totalPages;
+  rendering = false;
+  window.scrollTo(0, 0);
+}
+
+function prevPage() { if (currentPage > 1) renderPage(currentPage - 1); }
+function nextPage() { if (currentPage < totalPages) renderPage(currentPage + 1); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') prevPage();
+  if (e.key === 'ArrowRight') nextPage();
+  if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) e.preventDefault();
+});
+
+init();
+</script>
+</body>
+</html>

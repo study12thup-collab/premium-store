@@ -522,6 +522,16 @@ const sb = {
     }
     return r.ok;
   },
+  async postReturning(table, data) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, body: JSON.stringify(data) });
+    if (!r.ok) {
+      const errText = await r.text().catch(() => 'Unknown error');
+      console.error('Supabase insert error:', errText);
+      window.lastSupabaseError = errText;
+      return null;
+    }
+    return r.json();
+  },
   async patch(table, filter, data) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, { method: 'PATCH', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     return r.ok;
@@ -753,8 +763,17 @@ async function placeOrder() {
 
 function showDelivery(orderId, name, email, phone, total, deliveryLink, hasFile) {
   const accessUrl = hasFile ? `access.html?order=${orderId}` : deliveryLink;
-  document.getElementById('access-link').href = accessUrl || '#';
-  document.getElementById('access-link').style.display = 'inline-block';
+  const deliveryCard = document.getElementById('delivery-card');
+  if (!accessUrl || accessUrl === '#') {
+    deliveryCard.innerHTML = `
+      <h2>⚠️ Product Link Missing</h2>
+      <p>Payment received! Please contact support with your Order ID below — we'll send access manually.</p>`;
+  } else {
+    deliveryCard.innerHTML = `
+      <h2>🎁 Your Product is Ready</h2>
+      <p>Click below to access your purchase instantly</p>
+      <a class="access-btn" href="${accessUrl}" target="_blank">📥 Access Now</a>`;
+  }
   document.getElementById('confirm-details').innerHTML = `
     <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
     <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
@@ -974,11 +993,10 @@ async function saveProduct() {
       renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
     } else { alert('Update failed — try again'); }
   } else {
-    const saved = await sb.post('digital_products', productData);
-    if (saved) {
+    const savedRows = await sb.postReturning('digital_products', productData);
+    if (savedRows && savedRows[0]) {
       toast('✅ Product saved!');
-      productData.id = Date.now();
-      products.push(productData);
+      products.push(savedRows[0]);
       renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
     } else { alert('Save failed:\n\n' + (window.lastSupabaseError || 'Unknown error') + '\n\nPlease screenshot this and share.'); }
   }

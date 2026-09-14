@@ -547,7 +547,7 @@ const defaultProducts = [
 
 async function init() {
   try {
-    const data = await sb.get('products', 'published=eq.true');
+    const data = await sb.get('digital_products', 'published=eq.true');
     products = (data && data.length > 0 && !data.error) ? data : defaultProducts;
   } catch(e) { products = defaultProducts; }
   renderGrid();
@@ -928,7 +928,7 @@ async function saveProduct() {
   }
 
   if (editingProductId) {
-    const ok = await sb.patch('products', `id=eq.${editingProductId}`, productData);
+    const ok = await sb.patch('digital_products', `id=eq.${editingProductId}`, productData);
     if (ok) {
       toast('✅ Product updated!');
       const idx = products.findIndex(p => p.id == editingProductId);
@@ -936,7 +936,7 @@ async function saveProduct() {
       renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
     } else { alert('Update failed — try again'); }
   } else {
-    const saved = await sb.post('products', productData);
+    const saved = await sb.post('digital_products', productData);
     if (saved) {
       toast('✅ Product saved!');
       productData.id = Date.now();
@@ -957,7 +957,7 @@ function fileToBase64(file) {
 
 async function deleteProduct(id) {
   if (!confirm('Delete this product?')) return;
-  await sb.delete('products', `id=eq.${id}`);
+  await sb.delete('digital_products', `id=eq.${id}`);
   products = products.filter(p => p.id != id);
   renderGrid(); renderAdminProducts();
 }

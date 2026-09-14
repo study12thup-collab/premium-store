@@ -515,6 +515,11 @@ const sb = {
   },
   async post(table, data) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify(data) });
+    if (!r.ok) {
+      const errText = await r.text().catch(() => 'Unknown error');
+      console.error('Supabase insert error:', errText);
+      window.lastSupabaseError = errText;
+    }
     return r.ok;
   },
   async patch(table, filter, data) {
@@ -937,7 +942,7 @@ async function saveProduct() {
       productData.id = Date.now();
       products.push(productData);
       renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
-    } else { alert('Save failed — try again'); }
+    } else { alert('Save failed:\n\n' + (window.lastSupabaseError || 'Unknown error') + '\n\nPlease screenshot this and share.'); }
   }
 }
 

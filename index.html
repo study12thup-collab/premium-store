@@ -347,7 +347,11 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     </div>
     <div class="footer-bottom">
       <p>© 2024 Digital Store. All rights reserved.</p>
-      <div class="admin-footer-link"><a href="#" onclick="showPage('admin-login')">⚙️ Admin Login</a></div>
+      <div class="admin-footer-link">
+        <a href="#" onclick="showPage('my-purchase')" style="color:#8b5cf6;font-weight:700">🔑 Access My Purchase</a>
+        &nbsp;|&nbsp;
+        <a href="#" onclick="showPage('admin-login')">⚙️ Admin Login</a>
+      </div>
     </div>
   </footer>
 </div>
@@ -365,6 +369,25 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
   <div class="cart-wrap">
     <h1>🛒 Your Cart</h1>
     <div id="cart-content"></div>
+  </div>
+</div>
+
+<!-- ===== MY PURCHASE LOOKUP ===== -->
+<div class="page" id="page-my-purchase">
+  <div class="checkout-wrap">
+    <h1>🔑 Access Your Purchase</h1>
+    <div class="checkout-sub">Enter your Order ID or Email to get your access link again</div>
+    <div class="form-card">
+      <div class="error-box" id="lookup-err"></div>
+      <div class="form-group"><label>Order ID (e.g. ORD-XXXXXX)</label><input type="text" id="lookup-order" placeholder="ORD-XXXXXX"/></div>
+      <div style="text-align:center;color:var(--gray);font-size:13px;margin:10px 0">— OR —</div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="lookup-email" placeholder="your@email.com"/></div>
+      <button class="pay-btn" onclick="lookupPurchase()" id="lookup-btn">🔍 Find My Purchase</button>
+    </div>
+    <div id="lookup-results" style="margin-top:20px"></div>
+    <div style="text-align:center;margin-top:20px">
+      <a href="#" onclick="showPage('home')" style="color:var(--primary);font-weight:700;font-size:14px">← Back to Store</a>
+    </div>
   </div>
 </div>
 
@@ -812,6 +835,81 @@ function showConfirmationFallback(orderId) {
     <div class="c-row"><span class="c-label">Note</span><span class="c-val" style="font-size:12px">Contact support with your Order ID for access</span></div>`;
   document.getElementById('access-link').style.display = 'none';
   showPage('confirmation');
+}
+
+async function lookupPurchase() {
+  const orderId = document.getElementById('lookup-order').value.trim();
+  const email = document.getElementById('lookup-email').value.trim();
+  const errBox = document.getElementById('lookup-err');
+  const resultsEl = document.getElementById('lookup-results');
+  const btn = document.getElementById('lookup-btn');
+
+  errBox.style.display = 'none';
+  resultsEl.innerHTML = '';
+
+  if (!orderId && !email) {
+    errBox.textContent = '❌ Please enter Order ID or Email';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = '⏳ Searching...';
+  btn.disabled = true;
+
+  try {
+    let orders;
+    if (orderId) {
+      orders = await sb.get('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`);
+    } else {
+      orders = await sb.get('digital_orders', `customer_email=eq.${encodeURIComponent(email)}`);
+    }
+
+    if (!orders || orders.length === 0) {
+      errBox.textContent = '❌ No order found. Check your Order ID or Email.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    const paidOrders = orders.filter(o => o.payment_status === 'paid');
+    if (paidOrders.length === 0) {
+      errBox.textContent = '⚠️ Order found but payment not completed yet.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    let html = '';
+    for (const order of paidOrders) {
+      let deliveryLink = '#';
+      let hasFile = false;
+      const items = order.items || [];
+      if (items.length > 0) {
+        const productData = await sb.get('digital_products', `id=eq.${items[0].id}`);
+        const product = Array.isArray(productData) ? productData[0] : null;
+        if (product) {
+          deliveryLink = product.delivery_link || '#';
+          hasFile = !!product.file_path;
+        }
+      }
+      const accessUrl = hasFile ? `access.html?order=${order.order_id}` : deliveryLink;
+      const productName = items[0]?.name || 'Your Product';
+
+      html += `
+        <div class="delivery-card" style="margin-bottom:14px">
+          <h2 style="font-size:15px">${productName}</h2>
+          <p style="font-size:12px">Order: ${order.order_id}</p>
+          ${accessUrl && accessUrl !== '#'
+            ? `<a class="access-btn" href="${accessUrl}" target="_blank">📥 Access Now</a>`
+            : `<p style="font-size:12px">Link unavailable — contact support</p>`}
+        </div>`;
+    }
+    resultsEl.innerHTML = html;
+  } catch (e) {
+    errBox.textContent = '❌ Something went wrong. Try again.';
+    errBox.style.display = 'block';
+  } finally {
+    btn.textContent = '🔍 Find My Purchase';
+    btn.disabled = false;
+  }
 }
 
 function adminLogin() {

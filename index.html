@@ -598,13 +598,13 @@ function productCard(p, idx) {
   const disc = p.discount || 0;
   const orig = p.original_price || p.price;
   const img = (p.images && p.images[0]) ? `<img src="${p.images[0]}" alt="${p.name}" onerror="this.style.display='none'"/>` : (typeIcon[p.product_type] || '📦');
-  return `<div class="pcard" style="animation-delay:${(idx||0)*0.08}s" onclick="openProduct(${p.id})">
+  return `<div class="pcard" style="animation-delay:${(idx||0)*0.08}s" onclick="openProduct('${p.id}')">
     <div class="pcard-img">${img}<span class="type-badge">${p.product_type || 'ebook'}</span>${disc > 0 ? `<span class="disc-badge">-${disc}%</span>` : ''}</div>
     <div class="pcard-body">
       <div class="pcard-name">${p.name}</div>
       <div class="pcard-desc">${p.description || ''}</div>
       <div class="pcard-price"><span class="price">₹${p.price.toLocaleString('en-IN')}</span>${disc > 0 ? `<span class="old">₹${orig.toLocaleString('en-IN')}</span>` : ''}</div>
-      <button class="btn-buy" onclick="event.stopPropagation();buyNow(${p.id})">⚡ Buy Now</button>
+      <button class="btn-buy" onclick="event.stopPropagation();buyNow('${p.id}')">⚡ Buy Now</button>
     </div>
   </div>`;
 }
@@ -638,7 +638,7 @@ function openProduct(id) {
         <li>📱 Access on any device</li>
         <li>♻️ Lifetime access</li>
       </ul>
-      <button class="btn-buy-large" onclick="buyNow(${p.id})">⚡ Buy Now — ₹${p.price.toLocaleString('en-IN')}</button>
+      <button class="btn-buy-large" onclick="buyNow('${p.id}')">⚡ Buy Now — ₹${p.price.toLocaleString('en-IN')}</button>
       <div class="instant-note">⚡ You'll get access immediately after payment</div>
       <div style="margin-top:16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px;text-align:center">
         <div style="font-size:20px;margin-bottom:4px">🛡️</div>
@@ -669,7 +669,7 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-img">${item.images && item.images[0] ? `<img src="${item.images[0]}" onerror="this.style.display='none'"/>` : '📦'}</div>
       <div><div class="cart-item-name">${item.name}</div><div class="cart-item-price">₹${item.price.toLocaleString('en-IN')}</div></div>
-      <button class="remove-btn" onclick="removeFromCart(${item.id})">🗑️</button>
+      <button class="remove-btn" onclick="removeFromCart('${item.id}')">🗑️</button>
     </div>`).join('') + `
     <div class="cart-summary">
       <div class="summary-total"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
@@ -1010,8 +1010,8 @@ function renderAdminProducts() {
         <div class="product-admin-name">${p.name}</div>
         <div class="product-admin-price">₹${p.price.toLocaleString('en-IN')}</div>
         <div style="display:flex;gap:6px">
-          <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct(${p.id})">✏️ Edit</button>
-          <button class="delete-btn" style="flex:1" onclick="deleteProduct(${p.id})">🗑️</button>
+          <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct('${p.id}')">✏️ Edit</button>
+          <button class="delete-btn" style="flex:1" onclick="deleteProduct('${p.id}')">🗑️</button>
         </div>
       </div>
     </div>`).join('');

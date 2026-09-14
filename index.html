@@ -754,6 +754,7 @@ async function placeOrder() {
 function showDelivery(orderId, name, email, phone, total, deliveryLink, hasFile) {
   const accessUrl = hasFile ? `access.html?order=${orderId}` : deliveryLink;
   document.getElementById('access-link').href = accessUrl || '#';
+  document.getElementById('access-link').style.display = 'inline-block';
   document.getElementById('confirm-details').innerHTML = `
     <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
     <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
@@ -763,17 +764,54 @@ function showDelivery(orderId, name, email, phone, total, deliveryLink, hasFile)
   showPage('confirmation');
 }
 
-function checkPaymentReturn() {
+async function checkPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('status') === 'success') {
-    const pending = JSON.parse(sessionStorage.getItem('pendingOrder') || 'null');
-    if (pending) {
-      sb.patch('digital_orders', `order_id=eq.${pending.orderId}`, { payment_status: 'paid', order_status: 'delivered' });
-      window.history.replaceState({}, '', window.location.pathname);
-      showDelivery(pending.orderId, pending.name, pending.email, pending.phone, pending.amount, pending.deliveryLink, pending.hasFile);
-      sessionStorage.removeItem('pendingOrder');
+  if (params.get('status') === 'success' && params.get('order')) {
+    const orderId = params.get('order');
+    window.history.replaceState({}, '', window.location.pathname);
+
+    try {
+      // Mark order paid
+      await sb.patch('digital_orders', `order_id=eq.${orderId}`, { payment_status: 'paid', order_status: 'delivered' });
+
+      // Fetch the order to get customer + item info
+      const orderData = await sb.get('digital_orders', `order_id=eq.${orderId}`);
+      const order = Array.isArray(orderData) ? orderData[0] : null;
+
+      if (!order) {
+        showConfirmationFallback(orderId);
+        return;
+      }
+
+      // Look up product's delivery link
+      let deliveryLink = '#';
+      let hasFile = false;
+      const items = order.items || [];
+      if (items.length > 0) {
+        const productData = await sb.get('digital_products', `id=eq.${items[0].id}`);
+        const product = Array.isArray(productData) ? productData[0] : null;
+        if (product) {
+          deliveryLink = product.delivery_link || '#';
+          hasFile = !!product.file_path;
+        }
+      }
+
+      showDelivery(orderId, order.customer_name, order.customer_email, order.customer_phone, order.amount, deliveryLink, hasFile);
+    } catch (e) {
+      console.error('Payment return error:', e);
+      showConfirmationFallback(orderId);
     }
   }
+}
+
+function showConfirmationFallback(orderId) {
+  document.getElementById('confirm-details').innerHTML = `
+    <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
+    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
+    <div class="c-row"><span class="c-label">Status</span><span class="c-val" style="color:#16a34a">✅ Paid</span></div>
+    <div class="c-row"><span class="c-label">Note</span><span class="c-val" style="font-size:12px">Contact support with your Order ID for access</span></div>`;
+  document.getElementById('access-link').style.display = 'none';
+  showPage('confirmation');
 }
 
 function adminLogin() {

@@ -354,9 +354,6 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     </div>
     <div class="footer-bottom">
       <p>© 2024 Digital Store. All rights reserved.</p>
-      <div class="admin-footer-link">
-        <a href="#" onclick="showPage('admin-login')">⚙️ Admin Login</a>
-      </div>
     </div>
   </footer>
 </div>
@@ -581,6 +578,12 @@ async function init() {
   renderGrid();
   updateCartUI();
   checkPaymentReturn();
+
+  // Secret admin access - only via ?panel=owner123 in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('panel') === 'owner123') {
+    showPage('admin-login');
+  }
 }
 
 function showPage(p) {

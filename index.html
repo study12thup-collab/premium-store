@@ -510,7 +510,11 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
           </div>
           <div class="form-row">
             <div class="form-group"><label>Discount (%)</label><input type="number" id="p-disc" placeholder="0"/></div>
-            <div class="form-group"><label>Cover Image URL</label><input type="text" id="p-img" placeholder="https://..."/></div>
+            <div class="form-group">
+              <label>Cover Image</label>
+              <input type="file" id="p-img" accept="image/*"/>
+              <div id="img-upload-status" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
+            </div>
           </div>
           <div class="form-group"><label>Delivery Link (external URL - for courses/software)</label><input type="text" id="p-delivery" placeholder="https://drive.google.com/... (leave empty if uploading PDF below)"/></div>
           <div class="form-group">
@@ -1010,12 +1014,13 @@ function editProduct(id) {
   const p = products.find(x => x.id == id);
   if (!p) return;
   editingProductId = id;
+  window.editingExistingImage = (p.images && p.images[0]) || '';
   document.getElementById('p-name').value = p.name || '';
   document.getElementById('p-type').value = p.product_type || 'ebook';
   document.getElementById('p-price').value = p.price || '';
   document.getElementById('p-orig').value = p.original_price || '';
   document.getElementById('p-disc').value = p.discount || 0;
-  document.getElementById('p-img').value = (p.images && p.images[0]) || '';
+  document.getElementById('img-upload-status').textContent = window.editingExistingImage ? '📷 Current image set — upload new to replace' : '';
   document.getElementById('p-delivery').value = p.delivery_link || '';
   document.getElementById('p-desc').value = p.description || '';
   document.getElementById('p-form-title').textContent = '✏️ Edit Product';
@@ -1026,9 +1031,12 @@ function editProduct(id) {
 
 function resetProductForm() {
   editingProductId = null;
+  window.editingExistingImage = '';
   document.getElementById('p-form-title').textContent = '➕ Add New Digital Product';
   document.getElementById('p-save-btn').textContent = '✅ Save Product';
-  ['p-name','p-price','p-orig','p-disc','p-img','p-delivery','p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('img-upload-status').textContent = '';
+  ['p-name','p-price','p-orig','p-disc','p-delivery','p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-img').value = '';
 }
 
 async function saveProduct() {
@@ -1037,13 +1045,40 @@ async function saveProduct() {
   const price = parseFloat(document.getElementById('p-price').value);
   const orig = parseFloat(document.getElementById('p-orig').value) || price;
   const disc = parseInt(document.getElementById('p-disc').value) || 0;
-  const img = document.getElementById('p-img').value.trim();
+  const imgInput = document.getElementById('p-img');
   const delivery = document.getElementById('p-delivery').value.trim();
   const desc = document.getElementById('p-desc').value.trim();
   const fileInput = document.getElementById('p-file');
   if (!name || !price) { alert('Name and price required!'); return; }
 
-  const productData = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: img ? [img] : [], delivery_link: delivery, published: true, stock: 999999 };
+  // Determine final image URL: new upload > existing (edit mode) > empty
+  let imageUrl = window.editingExistingImage || '';
+  if (imgInput.files && imgInput.files[0]) {
+    const imgStatus = document.getElementById('img-upload-status');
+    imgStatus.textContent = '⏳ Uploading image...';
+    try {
+      const imgFile = imgInput.files[0];
+      const imgBase64 = await fileToBase64(imgFile);
+      const imgUploadRes = await fetch(`${API_URL}/api/admin/upload-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileBase64: imgBase64, fileName: imgFile.name, productId: editingProductId || 'new' })
+      });
+      const imgUploadData = await imgUploadRes.json();
+      if (imgUploadData.url) {
+        imageUrl = imgUploadData.url;
+        imgStatus.textContent = '✅ Image uploaded!';
+      } else {
+        imgStatus.textContent = '❌ Image upload failed: ' + (imgUploadData.error || 'unknown error');
+        return;
+      }
+    } catch (e) {
+      document.getElementById('img-upload-status').textContent = '❌ Image upload error: ' + e.message;
+      return;
+    }
+  }
+
+  const productData = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: imageUrl ? [imageUrl] : [], delivery_link: delivery, published: true, stock: 999999 };
 
   // Handle PDF file upload if provided
   if (fileInput.files && fileInput.files[0]) {

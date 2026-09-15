@@ -26,9 +26,15 @@ img{max-width:100%}
 .topbar{background:linear-gradient(90deg,var(--primary-dark),var(--primary));color:#fff;text-align:center;padding:9px;font-size:13px;font-weight:600}
 header{background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.04)}
 .logo{font-size:21px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:8px}
-.header-right{display:flex;align-items:center;gap:14px}
+.header-right{display:flex;align-items:center;gap:8px}
+@media(max-width:400px){
+  .my-purchase-btn{padding:9px 10px;font-size:11px}
+  .cart-btn{padding:10px 14px;font-size:12px}
+  .logo{font-size:17px}
+}
 .nav-link{color:#374151;font-weight:600;font-size:14px}
 .cart-btn{background:var(--primary);color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:14px;position:relative}
+.my-purchase-btn{background:#fff;color:var(--primary);border:1.5px solid var(--primary);padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px}
 .cart-badge{position:absolute;top:-8px;right:-8px;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center}
 
 /* PAGES */
@@ -284,6 +290,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 <header>
   <div class="logo">📚 Digital Store</div>
   <div class="header-right">
+    <button class="my-purchase-btn" onclick="showPage('my-purchase')">🔑 My Purchase</button>
     <button class="cart-btn" onclick="showPage('cart')">🛒 Cart<span class="cart-badge" id="cartBadge">0</span></button>
   </div>
 </header>
@@ -348,8 +355,6 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     <div class="footer-bottom">
       <p>© 2024 Digital Store. All rights reserved.</p>
       <div class="admin-footer-link">
-        <a href="#" onclick="showPage('my-purchase')" style="color:#8b5cf6;font-weight:700">🔑 Access My Purchase</a>
-        &nbsp;|&nbsp;
         <a href="#" onclick="showPage('admin-login')">⚙️ Admin Login</a>
       </div>
     </div>

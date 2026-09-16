@@ -806,10 +806,29 @@ async function checkPaymentReturn() {
     window.history.replaceState({}, '', window.location.pathname);
 
     try {
-      // Mark order paid
-      await sb.patch('digital_orders', `order_id=eq.${orderId}`, { payment_status: 'paid', order_status: 'delivered' });
+      // Look up the Cashfree order id we stored when creating the payment
+      const paymentData = await sb.get('digital_payments', `order_id=eq.${orderId}`);
+      const paymentRecord = Array.isArray(paymentData) ? paymentData[0] : null;
 
-      // Fetch the order to get customer + item info
+      if (!paymentRecord || !paymentRecord.cashfree_order_id) {
+        showPaymentFailed(orderId, 'Could not find payment record.');
+        return;
+      }
+
+      // REAL verification — ask backend to check with Cashfree directly
+      const verifyRes = await fetch(`${API_URL}/api/orders/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, cfOrderId: paymentRecord.cashfree_order_id })
+      });
+      const verifyData = await verifyRes.json();
+
+      if (!verifyData.success) {
+        showPaymentFailed(orderId, 'Payment was not completed. If money was deducted, it will be refunded automatically by Cashfree within a few days.');
+        return;
+      }
+
+      // Payment genuinely confirmed paid — now fetch order + deliver
       const orderData = await sb.get('digital_orders', `order_id=eq.${orderId}`);
       const order = Array.isArray(orderData) ? orderData[0] : null;
 
@@ -818,7 +837,6 @@ async function checkPaymentReturn() {
         return;
       }
 
-      // Look up product's delivery link
       let deliveryLink = '#';
       let hasFile = false;
       const items = order.items || [];
@@ -834,9 +852,19 @@ async function checkPaymentReturn() {
       showDelivery(orderId, order.customer_name, order.customer_email, order.customer_phone, order.amount, deliveryLink, hasFile);
     } catch (e) {
       console.error('Payment return error:', e);
-      showConfirmationFallback(orderId);
+      showPaymentFailed(orderId, 'Something went wrong verifying your payment. Please contact support with your Order ID.');
     }
   }
+}
+
+function showPaymentFailed(orderId, message) {
+  document.getElementById('confirm-details').innerHTML = `
+    <h2 style="font-size:16px;font-weight:800;margin-bottom:14px;color:#dc2626">⚠️ Payment Not Confirmed</h2>
+    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
+    <p style="margin-top:12px;font-size:13px;color:#6b7280">${message}</p>`;
+  const dCard = document.getElementById('delivery-card');
+  if (dCard) dCard.innerHTML = `<h2>❌ No Access</h2><p>Payment could not be verified — access not granted.</p>`;
+  showPage('confirmation');
 }
 
 function showConfirmationFallback(orderId) {

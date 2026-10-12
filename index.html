@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Digital Store — Ebooks, Courses & Templates</title>
+<title>Premium Store — Shop Online, Delivered to Your Door</title>
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -271,6 +271,24 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 .chart-bar{width:100%;max-width:40px;background:linear-gradient(180deg,var(--primary-light),var(--primary));border-radius:6px 6px 0 0;transition:height .4s ease;min-height:4px}
 .chart-label{color:#9ca3af;font-size:10px;margin-top:8px}
 .chart-value{color:#fff;font-size:10px;font-weight:700;margin-bottom:4px}
+.qty{display:inline-flex;align-items:center;border:1.5px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff}
+.qty button{background:#f9fafb;width:32px;height:32px;font-size:17px;font-weight:800;color:#374151}
+.qty span{min-width:34px;text-align:center;font-weight:800;font-size:14px}
+.stock-note{font-size:12px;font-weight:700;margin-bottom:10px}
+.in-stock{color:#059669}.low-stock{color:#d97706}.out-stock{color:#dc2626}
+.btn-buy:disabled,.btn-buy-large:disabled{background:#d1d5db;cursor:not-allowed;box-shadow:none}
+.btn-row{display:flex;gap:10px}
+.btn-outline{background:#fff;color:var(--primary);border:1.5px solid var(--primary);padding:17px;border-radius:12px;font-size:15px;font-weight:800;width:100%}
+.sum-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:#374151}
+.free{color:#059669;font-weight:800}
+.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff}
+.form-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.track-step{display:flex;gap:12px;align-items:center;padding:8px 0;font-size:13.5px;color:#9ca3af;font-weight:600}
+.track-step.done{color:#059669}
+.track-dot{width:22px;height:22px;border-radius:50%;background:#e5e7eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.track-step.done .track-dot{background:#10b981}
+.s-shipped{background:#1e3a8a;color:#93c5fd}
+.empty-shop{grid-column:1/-1;text-align:center;color:var(--gray);padding:40px 10px}
 </style>
 </head>
 <body>
@@ -286,11 +304,11 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 </div>
 
 <!-- HEADER -->
-<div class="topbar">⚡ Instant Delivery — Get Access Immediately After Payment</div>
+<div class="topbar">🚚 Free Delivery on All Orders — Pay Securely Online</div>
 <header>
-  <div class="logo">📚 Digital Store</div>
+  <div class="logo">🛍️ Premium Store</div>
   <div class="header-right">
-    <button class="my-purchase-btn" onclick="showPage('my-purchase')">🔑 My Purchase</button>
+    <button class="my-purchase-btn" onclick="showPage('track')">📦 Track Order</button>
     <button class="cart-btn" onclick="showPage('cart')">🛒 Cart<span class="cart-badge" id="cartBadge">0</span></button>
   </div>
 </header>
@@ -298,62 +316,62 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 <!-- ===== HOME ===== -->
 <div class="page active" id="page-home">
   <div class="hero">
-    <span class="float-emoji fe1">📖</span>
-    <span class="float-emoji fe2">🎓</span>
-    <span class="float-emoji fe3">💡</span>
+    <span class="float-emoji fe1">🎁</span>
+    <span class="float-emoji fe2">👟</span>
+    <span class="float-emoji fe3">📱</span>
     <span class="float-emoji fe4">✨</span>
     <div class="hero-content">
-      <div class="hero-badge badge-shine" style="color:#1a1a1a">🔥 DIGITAL PRODUCTS</div>
-      <h1>Ebooks, Courses & Templates — Delivered Instantly</h1>
-      <p>Pay once, get instant access. No shipping, no waiting — download or access immediately.</p>
-      <a class="hero-btn" href="#" onclick="document.getElementById('products-section').scrollIntoView({behavior:'smooth'})">Browse Products →</a>
+      <div class="hero-badge badge-shine" style="color:#1a1a1a">🔥 NEW ARRIVALS</div>
+      <h1>Quality Products, Delivered to Your Door</h1>
+      <p>Shop the latest products at great prices. Free delivery across India and secure online payment.</p>
+      <a class="hero-btn" href="#" onclick="document.getElementById('products-section').scrollIntoView({behavior:'smooth'});return false">Shop Now →</a>
       <div class="trust-row">
-        <div class="trust-item">⚡ Instant Access</div>
+        <div class="trust-item">🚚 Free Delivery</div>
         <div class="trust-item">🔒 Secure Payment</div>
-        <div class="trust-item">↩️ Money-back Guarantee</div>
+        <div class="trust-item">↩️ 7-Day Easy Returns</div>
       </div>
     </div>
   </div>
 
   <div class="section" id="products-section">
     <div class="section-header">
-      <div class="section-title">📦 Our Products</div>
-      <div class="section-sub">Digital products you can access right after payment</div>
+      <div class="section-title">🛍️ Our Products</div>
+      <div class="section-sub">Free delivery on every order</div>
     </div>
     <div class="products-grid" id="grid-products"></div>
   </div>
 
   <div class="why-section">
     <div class="why-grid">
-      <div class="why-card"><div class="why-icon">🛡️</div><h3>Money-Back Guarantee</h3><p>7-day full refund policy</p></div>
-      <div class="why-card"><div class="why-icon">⚡</div><h3>Instant Delivery</h3><p>Access right after payment</p></div>
+      <div class="why-card"><div class="why-icon">🚚</div><h3>Free Delivery</h3><p>On all orders, pan-India</p></div>
+      <div class="why-card"><div class="why-icon">↩️</div><h3>Easy Returns</h3><p>7-day return policy</p></div>
       <div class="why-card"><div class="why-icon">🔒</div><h3>Secure Checkout</h3><p>Encrypted payment gateway</p></div>
-      <div class="why-card"><div class="why-icon">🎧</div><h3>Support Included</h3><p>We're here to help</p></div>
+      <div class="why-card"><div class="why-icon">🎧</div><h3>Support</h3><p>We're here to help</p></div>
     </div>
   </div>
 
   <footer>
     <div class="footer-grid">
       <div class="footer-col">
-        <h3>📚 Digital Store</h3>
-        <p>Premium digital products — ebooks, courses & templates delivered instantly after purchase.</p>
+        <h3>🛍️ Premium Store</h3>
+        <p>Quality products at great prices, shipped to your doorstep with free delivery.</p>
       </div>
       <div class="footer-col">
         <h3>Quick Links</h3>
-        <ul><li><a href="#" onclick="showPage('home')">Home</a></li><li><a href="#">About Us</a></li><li><a href="#">Contact Us</a></li></ul>
+        <ul><li><a href="#" onclick="showPage('home');return false">Home</a></li><li><a href="#" onclick="showPage('track');return false">Track Order</a></li><li><a href="#">Contact Us</a></li></ul>
       </div>
       <div class="footer-col">
         <h3>Policies</h3>
-        <ul><li><a href="#">Refund Policy</a></li><li><a href="#">Terms of Use</a></li><li><a href="#">Privacy Policy</a></li></ul>
+        <ul><li><a href="#">Shipping Policy</a></li><li><a href="#">Return &amp; Refund Policy</a></li><li><a href="#">Terms of Use</a></li><li><a href="#">Privacy Policy</a></li></ul>
       </div>
       <div class="footer-col">
         <h3>Contact</h3>
-        <p>📧 support@digitalstore.com</p>
+        <p>📧 support@premiumstore.com</p>
         <p>📞 +91-XXXXXXXXXX</p>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2024 Digital Store. All rights reserved.</p>
+      <p>© 2026 Premium Store. All rights reserved.</p>
     </div>
   </footer>
 </div>
@@ -361,7 +379,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 <!-- ===== PRODUCT DETAIL ===== -->
 <div class="page" id="page-detail">
   <div class="detail-wrap">
-    <a class="back-link" href="#" onclick="showPage('home')">← Back to Store</a>
+    <a class="back-link" href="#" onclick="showPage('home');return false">← Back to Store</a>
     <div class="detail-grid" id="detail-content"></div>
   </div>
 </div>
@@ -374,21 +392,20 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
   </div>
 </div>
 
-<!-- ===== MY PURCHASE LOOKUP ===== -->
-<div class="page" id="page-my-purchase">
+<!-- ===== TRACK ORDER ===== -->
+<div class="page" id="page-track">
   <div class="checkout-wrap">
-    <h1>🔑 Access Your Purchase</h1>
-    <div class="checkout-sub">Enter your Order ID or Email to get your access link again</div>
+    <h1>📦 Track Your Order</h1>
+    <div class="checkout-sub">Enter your Order ID and the email used while ordering</div>
     <div class="form-card">
       <div class="error-box" id="lookup-err"></div>
       <div class="form-group"><label>Order ID (e.g. ORD-XXXXXX)</label><input type="text" id="lookup-order" placeholder="ORD-XXXXXX"/></div>
-      <div style="text-align:center;color:var(--gray);font-size:13px;margin:10px 0">— OR —</div>
       <div class="form-group"><label>Email Address</label><input type="email" id="lookup-email" placeholder="your@email.com"/></div>
-      <button class="pay-btn" onclick="lookupPurchase()" id="lookup-btn">🔍 Find My Purchase</button>
+      <button class="pay-btn" onclick="trackOrder()" id="lookup-btn">🔍 Track Order</button>
     </div>
     <div id="lookup-results" style="margin-top:20px"></div>
     <div style="text-align:center;margin-top:20px">
-      <a href="#" onclick="showPage('home')" style="color:var(--primary);font-weight:700;font-size:14px">← Back to Store</a>
+      <a href="#" onclick="showPage('home');return false" style="color:var(--primary);font-weight:700;font-size:14px">← Back to Store</a>
     </div>
   </div>
 </div>
@@ -396,34 +413,31 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 <!-- ===== CHECKOUT ===== -->
 <div class="page" id="page-checkout">
   <div class="checkout-wrap">
-    <h1>Complete Your Purchase</h1>
-    <div class="checkout-sub">Enter your details to receive instant access</div>
+    <h1>Checkout</h1>
+    <div class="checkout-sub">Enter your delivery details</div>
     <div id="checkout-preview"></div>
     <div class="form-card">
       <div class="error-box" id="err-box"></div>
       <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="c-name" placeholder="Your full name"/></div>
       <div class="form-group"><label>Email Address <span class="req">*</span></label><input type="email" id="c-email" placeholder="your@email.com"/></div>
       <div class="form-group"><label>Mobile Number <span class="req">*</span></label><input type="tel" id="c-phone" placeholder="10 digit number" maxlength="10"/></div>
-      <button class="pay-btn" onclick="placeOrder()" id="pay-btn">🔒 Pay ₹<span id="pay-amount">0</span> & Get Instant Access</button>
+      <div class="form-group"><label>Delivery Address <span class="req">*</span></label><textarea id="c-address" rows="2" placeholder="House no, street, area, landmark"></textarea></div>
+      <div class="form-two">
+        <div class="form-group"><label>City <span class="req">*</span></label><input type="text" id="c-city" placeholder="City"/></div>
+        <div class="form-group"><label>State <span class="req">*</span></label><input type="text" id="c-state" placeholder="State"/></div>
+      </div>
+      <div class="form-group"><label>Pincode <span class="req">*</span></label><input type="tel" id="c-pincode" placeholder="6 digit pincode" maxlength="6"/></div>
+      <button class="pay-btn" onclick="placeOrder()" id="pay-btn">🔒 Pay ₹<span id="pay-amount">0</span></button>
       <div class="secure-note">🔒 Secured by Cashfree Payments</div>
-      <div class="secure-note" style="margin-top:6px">🛡️ 7-Day Money-Back Guarantee</div>
+      <div class="secure-note" style="margin-top:6px">🚚 Free delivery • ↩️ 7-day easy returns</div>
     </div>
   </div>
 </div>
 
-<!-- ===== CONFIRMATION / DELIVERY ===== -->
+<!-- ===== CONFIRMATION ===== -->
 <div class="page" id="page-confirmation">
   <div class="confirm-wrap">
-    <div class="confirm-success">
-      <div class="icon">✅</div>
-      <h1>Payment Successful!</h1>
-      <p>Your order has been confirmed. Access your product below.</p>
-    </div>
-    <div class="delivery-card" id="delivery-card">
-      <h2>🎁 Your Product is Ready</h2>
-      <p>Click below to access your purchase instantly</p>
-      <a class="access-btn" id="access-link" href="#" target="_blank">📥 Access Now</a>
-    </div>
+    <div class="confirm-success" id="confirm-banner"></div>
     <div class="confirm-card" id="confirm-details"></div>
     <div class="confirm-btns">
       <button class="home-btn" onclick="showPage('home')">🏠 Continue Shopping</button>
@@ -436,12 +450,12 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
   <div class="admin-login-wrap">
     <div class="admin-login-card">
       <h1>⚙️ Admin Panel</h1>
-      <p>Digital Store Management</p>
+      <p>Store Management</p>
       <div class="error-box" id="admin-err"></div>
       <div class="form-group"><label>Username</label><input type="text" id="a-user" value="admin"/></div>
       <div class="form-group"><label>Password</label><input type="password" id="a-pass" value="admin123"/></div>
       <button class="login-btn" onclick="adminLogin()">🔐 Login</button>
-      <div class="back-mini"><a href="#" onclick="showPage('home')">← Back to Store</a></div>
+      <div class="back-mini"><a href="#" onclick="showPage('home');return false">← Back to Store</a></div>
     </div>
   </div>
 </div>
@@ -459,17 +473,16 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     <div class="admin-body">
       <div id="admin-dashboard">
         <div class="stats-grid">
-          <div class="stat-card stat-blue"><div class="stat-label">Total Orders</div><div class="stat-val" id="s-total">0</div></div>
+          <div class="stat-card stat-blue"><div class="stat-label">Paid Orders</div><div class="stat-val" id="s-total">0</div></div>
           <div class="stat-card stat-green"><div class="stat-label">Today's Orders</div><div class="stat-val" id="s-today">0</div></div>
           <div class="stat-card stat-purple"><div class="stat-label">Total Revenue</div><div class="stat-val" id="s-sales">₹0</div></div>
-          <div class="stat-card stat-orange"><div class="stat-label">Pending</div><div class="stat-val" id="s-pending">0</div></div>
+          <div class="stat-card stat-orange"><div class="stat-label">To Ship</div><div class="stat-val" id="s-pending">0</div></div>
         </div>
         <div class="admin-card">
           <div class="admin-card-header"><h3>Recent Orders</h3></div>
-          <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recent-orders"></tbody></table></div>
+          <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Status</th></tr></thead><tbody id="recent-orders"></tbody></table></div>
         </div>
       </div>
-      <!-- Analytics Tab -->
       <div id="admin-analytics" style="display:none">
         <div class="stats-grid">
           <div class="stat-card stat-blue"><div class="stat-label">Conversion (Paid/Total)</div><div class="stat-val" id="an-conv">0%</div></div>
@@ -486,43 +499,37 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
           <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead><tbody id="an-top-products"></tbody></table></div>
         </div>
       </div>
-
       <div id="admin-orders" style="display:none">
         <input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders(this.value)"/>
         <div class="admin-card">
-          <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Email</th><th>Amount</th><th>Status</th><th>Update</th><th>Action</th></tr></thead><tbody id="all-orders"></tbody></table></div>
+          <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Amount</th><th>Payment</th><th>Status</th><th>Update</th><th>Action</th></tr></thead><tbody id="all-orders"></tbody></table></div>
         </div>
       </div>
       <div id="admin-products" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h3 style="color:#fff;font-size:16px;font-weight:700">Products</h3>
-          <button class="add-product-btn" onclick="resetProductForm();toggleProductForm()">+ Add Product</button>
+          <button class="add-product-btn" onclick="resetProductForm();toggleProductForm(true)">+ Add Product</button>
         </div>
         <div class="product-form" id="p-form" style="display:none">
-          <h3 id="p-form-title">➕ Add New Digital Product</h3>
+          <h3 id="p-form-title">➕ Add New Product</h3>
           <div class="form-row">
-            <div class="form-group"><label>Product Name</label><input type="text" id="p-name" placeholder="e.g. Complete Guide to..."/></div>
-            <div class="form-group"><label>Type</label><select id="p-type"><option value="ebook">Ebook</option><option value="course">Course</option><option value="template">Template</option><option value="software">Software</option></select></div>
+            <div class="form-group"><label>Product Name</label><input type="text" id="p-name" placeholder="e.g. Wireless Earbuds"/></div>
+            <div class="form-group"><label>Category</label><select id="p-type"><option>Electronics</option><option>Fashion</option><option>Home &amp; Kitchen</option><option>Beauty</option><option>Accessories</option><option>Other</option></select></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Price (₹)</label><input type="number" id="p-price" placeholder="Selling price"/></div>
-            <div class="form-group"><label>Original Price (₹)</label><input type="number" id="p-orig" placeholder="Original price"/></div>
+            <div class="form-group"><label>Original Price (₹)</label><input type="number" id="p-orig" placeholder="MRP"/></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Discount (%)</label><input type="number" id="p-disc" placeholder="0"/></div>
-            <div class="form-group">
-              <label>Cover Image</label>
-              <input type="file" id="p-img" accept="image/*"/>
-              <div id="img-upload-status" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
-            </div>
+            <div class="form-group"><label>Stock (units)</label><input type="number" id="p-stock" placeholder="e.g. 50"/></div>
           </div>
-          <div class="form-group"><label>Delivery Link (external URL - for courses/software)</label><input type="text" id="p-delivery" placeholder="https://drive.google.com/... (leave empty if uploading PDF below)"/></div>
           <div class="form-group">
-            <label>OR Upload PDF (secure — no download, view-only for buyer)</label>
-            <input type="file" id="p-file" accept="application/pdf"/>
-            <div id="upload-status" style="font-size:12px;color:#9ca3af;margin-top:6px"></div>
+            <label>Product Image</label>
+            <input type="file" id="p-img" accept="image/*"/>
+            <div id="img-upload-status" style="font-size:12px;color:#9ca3af;margin-top:6px"></div>
           </div>
-          <div class="form-group"><label>Description</label><textarea id="p-desc" rows="3" placeholder="What buyer gets..."></textarea></div>
+          <div class="form-group"><label>Description</label><textarea id="p-desc" rows="3" placeholder="Product details, size, material, warranty..."></textarea></div>
           <button class="save-btn" id="p-save-btn" onclick="saveProduct()">✅ Save Product</button>
           <button class="cancel-btn" onclick="toggleProductForm()">Cancel</button>
         </div>
@@ -561,33 +568,31 @@ const sb = {
   }
 };
 
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const inr = n => Number(n || 0).toLocaleString('en-IN');
+const TRACK_LIMIT = 100000; // stock above this is treated as "untracked / unlimited"
+
 let products = [];
-let cart = JSON.parse(localStorage.getItem('ds_cart') || '[]');
+let cart = [];
+try { cart = JSON.parse(localStorage.getItem('es_cart') || '[]'); } catch (e) { cart = []; }
 let orders = [];
 let currentProduct = null;
 let editingProductId = null;
 
-const defaultProducts = [
-  { id: 1, name: 'Zero Investment ₹20,000 Income Guide', product_type: 'ebook', price: 149, original_price: 4999, discount: 97, description: '65+ proven methods to earn online without any investment. Complete step-by-step Hindi/English guide.', images: ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500'], delivery_link: '#' },
-  { id: 2, name: 'Social Media Marketing Masterclass', product_type: 'course', price: 499, original_price: 1999, discount: 75, description: 'Complete video course on growing your brand on Instagram, Facebook & YouTube.', images: ['https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500'], delivery_link: '#' },
-  { id: 3, name: 'Business Invoice Templates Pack', product_type: 'template', price: 299, original_price: 999, discount: 70, description: '20+ professional invoice and quotation templates in editable formats.', images: ['https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500'], delivery_link: '#' },
-  { id: 4, name: 'Instagram Growth Ebook 2024', product_type: 'ebook', price: 199, original_price: 899, discount: 78, description: 'Learn the exact strategies to grow your Instagram followers organically.', images: ['https://images.unsplash.com/photo-1611262588024-d12430b98920?w=500'], delivery_link: '#' },
-];
-
-async function init() {
+async function loadProducts() {
   try {
     const data = await sb.get('digital_products', 'published=eq.true');
-    products = (data && data.length > 0 && !data.error) ? data : defaultProducts;
-  } catch(e) { products = defaultProducts; }
+    products = Array.isArray(data) ? data : [];
+  } catch (e) { products = []; }
+}
+
+async function init() {
+  await loadProducts();
   renderGrid();
   updateCartUI();
   checkPaymentReturn();
-
-  // Secret admin access - only via ?panel=owner123 in URL
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('panel') === 'owner123') {
-    showPage('admin-login');
-  }
+  if (urlParams.get('panel') === 'owner123') showPage('admin-login');
 }
 
 function showPage(p) {
@@ -606,108 +611,155 @@ function toast(msg) {
   setTimeout(() => t.style.display = 'none', 2500);
 }
 
-function saveCart() { localStorage.setItem('ds_cart', JSON.stringify(cart)); updateCartUI(); }
+function saveCart() { try { localStorage.setItem('es_cart', JSON.stringify(cart)); } catch (e) {} updateCartUI(); }
+function cartCount() { return cart.reduce((s, i) => s + i.qty, 0); }
+function getTotal() { return cart.reduce((s, i) => s + i.price * i.qty, 0); }
 
 function updateCartUI() {
-  const count = cart.length;
+  const count = cartCount();
   const badge = document.getElementById('cartBadge');
   badge.textContent = count;
   badge.style.display = count > 0 ? 'flex' : 'none';
 }
 
-function addToCart(id) {
+function maxQty(p) { return p.stock != null && p.stock < TRACK_LIMIT ? Math.max(p.stock, 0) : 10; }
+function isOut(p) { return p.stock != null && p.stock <= 0; }
+
+function stockNote(p) {
+  if (isOut(p)) return '<div class="stock-note out-stock">❌ Out of Stock</div>';
+  if (p.stock != null && p.stock < 10) return `<div class="stock-note low-stock">⚠️ Only ${p.stock} left</div>`;
+  return '<div class="stock-note in-stock">✅ In Stock</div>';
+}
+
+function addToCart(id, qty) {
   const p = products.find(x => x.id == id);
-  if (!p) return;
-  if (cart.find(i => i.id == id)) { toast('Already in cart!'); return; }
-  cart.push({ id: p.id, name: p.name, price: p.price, images: p.images, delivery_link: p.delivery_link, file_path: p.file_path });
+  if (!p) return false;
+  if (isOut(p)) { toast('Out of stock'); return false; }
+  qty = qty || 1;
+  const ex = cart.find(i => i.id == id);
+  const limit = maxQty(p);
+  if (ex) {
+    if (ex.qty + qty > limit) { ex.qty = limit; toast('Maximum available quantity added'); }
+    else { ex.qty += qty; toast('✅ Cart updated'); }
+    ex.stock = p.stock;
+  } else {
+    cart.push({ id: p.id, name: p.name, price: Number(p.price), images: p.images, qty: Math.min(qty, limit), stock: p.stock });
+    toast('✅ Added to cart!');
+  }
   saveCart();
-  toast('✅ Added to cart!');
+  return true;
+}
+
+function changeQty(id, d) {
+  const it = cart.find(i => i.id == id);
+  if (!it) return;
+  const p = products.find(x => x.id == id) || it;
+  const limit = maxQty(p);
+  const n = it.qty + d;
+  if (n < 1) { removeFromCart(id); return; }
+  if (n > limit) { toast('Only ' + limit + ' available'); return; }
+  it.qty = n; saveCart(); renderCart();
 }
 
 function removeFromCart(id) { cart = cart.filter(i => i.id != id); saveCart(); renderCart(); }
-function getTotal() { return cart.reduce((s, i) => s + i.price, 0); }
-
-const typeIcon = { ebook: '📕', course: '🎓', template: '📄', software: '💾' };
 
 function productCard(p, idx) {
   const disc = p.discount || 0;
   const orig = p.original_price || p.price;
-  const img = (p.images && p.images[0]) ? `<img src="${p.images[0]}" alt="${p.name}" onerror="this.style.display='none'"/>` : (typeIcon[p.product_type] || '📦');
-  return `<div class="pcard" style="animation-delay:${(idx||0)*0.08}s" onclick="openProduct('${p.id}')">
-    <div class="pcard-img">${img}<span class="type-badge">${p.product_type || 'ebook'}</span>${disc > 0 ? `<span class="disc-badge">-${disc}%</span>` : ''}</div>
+  const out = isOut(p);
+  const img = (p.images && p.images[0]) ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}" onerror="this.style.display='none'"/>` : '📦';
+  return `<div class="pcard" style="animation-delay:${(idx||0)*0.08}s" onclick="openProduct('${esc(p.id)}')">
+    <div class="pcard-img">${img}${p.product_type ? `<span class="type-badge">${esc(p.product_type)}</span>` : ''}${disc > 0 ? `<span class="disc-badge">-${disc}%</span>` : ''}</div>
     <div class="pcard-body">
-      <div class="pcard-name">${p.name}</div>
-      <div class="pcard-desc">${p.description || ''}</div>
-      <div class="pcard-price"><span class="price">₹${p.price.toLocaleString('en-IN')}</span>${disc > 0 ? `<span class="old">₹${orig.toLocaleString('en-IN')}</span>` : ''}</div>
-      <button class="btn-buy" onclick="event.stopPropagation();buyNow('${p.id}')">⚡ Buy Now</button>
+      <div class="pcard-name">${esc(p.name)}</div>
+      <div class="pcard-desc">${esc(p.description || '')}</div>
+      <div class="pcard-price"><span class="price">₹${inr(p.price)}</span>${disc > 0 ? `<span class="old">₹${inr(orig)}</span>` : ''}</div>
+      <button class="btn-buy" ${out ? 'disabled' : ''} onclick="event.stopPropagation();addToCart('${esc(p.id)}')">${out ? 'Out of Stock' : '🛒 Add to Cart'}</button>
     </div>
   </div>`;
 }
 
 function renderGrid() {
   const g = document.getElementById('grid-products');
-  if (g) g.innerHTML = products.map((p,i) => productCard(p,i)).join('');
+  if (g) g.innerHTML = products.length ? products.map((p, i) => productCard(p, i)).join('') : '<div class="empty-shop">Products coming soon!</div>';
 }
 
+let detailQty = 1;
 function openProduct(id) {
   const p = products.find(x => x.id == id);
   if (!p) return;
-  currentProduct = p;
+  currentProduct = p; detailQty = 1;
   const disc = p.discount || 0;
   const orig = p.original_price || p.price;
   const save = orig - p.price;
-  const img = (p.images && p.images[0]) ? `<img src="${p.images[0]}" alt="${p.name}"/>` : (typeIcon[p.product_type] || '📦');
+  const out = isOut(p);
+  const img = (p.images && p.images[0]) ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}"/>` : '📦';
   document.getElementById('detail-content').innerHTML = `
     <div><div class="detail-img">${img}</div></div>
     <div class="detail-info">
-      <div class="detail-type">${typeIcon[p.product_type] || '📦'} ${p.product_type || 'Ebook'}</div>
-      <h1>${p.name}</h1>
+      ${p.product_type ? `<div class="detail-type">${esc(p.product_type)}</div>` : ''}
+      <h1>${esc(p.name)}</h1>
       <div class="detail-price-box">
-        <div style="display:flex;align-items:baseline;flex-wrap:wrap"><span class="detail-price">₹${p.price.toLocaleString('en-IN')}</span>${disc > 0 ? `<span class="detail-old">₹${orig.toLocaleString('en-IN')}</span>` : ''}</div>
-        ${disc > 0 ? `<div class="detail-save">💰 You save ₹${save.toLocaleString('en-IN')} (${disc}% off)</div>` : ''}
+        <div style="display:flex;align-items:baseline;flex-wrap:wrap"><span class="detail-price">₹${inr(p.price)}</span>${disc > 0 ? `<span class="detail-old">₹${inr(orig)}</span>` : ''}</div>
+        ${disc > 0 && save > 0 ? `<div class="detail-save">💰 You save ₹${inr(save)} (${disc}% off)</div>` : ''}
       </div>
-      <p class="detail-desc">${p.description || ''}</p>
+      ${stockNote(p)}
+      <p class="detail-desc">${esc(p.description || '')}</p>
+      ${out ? '' : `<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="font-weight:700;font-size:14px">Quantity</span>
+        <div class="qty"><button onclick="detailChange(-1)">−</button><span id="detail-qty">1</span><button onclick="detailChange(1)">+</button></div></div>`}
       <ul class="feature-list">
-        <li>⚡ Instant access after payment</li>
-        <li>🔒 Secure & encrypted checkout</li>
-        <li>📱 Access on any device</li>
-        <li>♻️ Lifetime access</li>
+        <li>🚚 Free delivery in 3–7 business days</li>
+        <li>🔒 Secure &amp; encrypted checkout</li>
+        <li>↩️ 7-day easy returns</li>
       </ul>
-      <button class="btn-buy-large" onclick="buyNow('${p.id}')">⚡ Buy Now — ₹${p.price.toLocaleString('en-IN')}</button>
-      <div class="instant-note">⚡ You'll get access immediately after payment</div>
-      <div style="margin-top:16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px;text-align:center">
-        <div style="font-size:20px;margin-bottom:4px">🛡️</div>
-        <div style="font-weight:700;font-size:13px;color:#065f46">7-Day Money-Back Guarantee</div>
-        <div style="font-size:12px;color:#059669">Not satisfied? Get a full refund, no questions asked.</div>
+      <div class="btn-row">
+        <button class="btn-outline" ${out ? 'disabled' : ''} onclick="detailAdd(false)">🛒 Add to Cart</button>
+        <button class="btn-buy-large" ${out ? 'disabled' : ''} onclick="detailAdd(true)">${out ? 'Out of Stock' : '⚡ Buy Now'}</button>
       </div>
+      <div class="instant-note">🔒 Secured by Cashfree Payments</div>
     </div>`;
   showPage('detail');
 }
 
-function buyNow(id) {
-  const p = products.find(x => x.id == id);
-  if (!p) return;
-  cart = [{ id: p.id, name: p.name, price: p.price, images: p.images, delivery_link: p.delivery_link, file_path: p.file_path }];
-  saveCart();
-  showPage('checkout');
+function detailChange(d) {
+  if (!currentProduct) return;
+  const n = detailQty + d;
+  if (n < 1 || n > maxQty(currentProduct)) return;
+  detailQty = n;
+  document.getElementById('detail-qty').textContent = n;
+}
+
+function detailAdd(goCheckout) {
+  if (!currentProduct) return;
+  if (addToCart(currentProduct.id, detailQty) && goCheckout) showPage('checkout');
+}
+
+function summaryRows(total) {
+  return `<div class="sum-row"><span>Subtotal</span><span>₹${inr(total)}</span></div>
+    <div class="sum-row"><span>Delivery</span><span class="free">FREE</span></div>`;
 }
 
 function renderCart() {
   const el = document.getElementById('cart-content');
   if (!el) return;
   if (cart.length === 0) {
-    el.innerHTML = `<div class="cart-empty"><div class="e-icon">🛒</div><p style="color:var(--gray);margin-bottom:16px">Your cart is empty</p><button class="btn-buy" style="width:auto;padding:12px 24px" onclick="showPage('home')">Browse Products</button></div>`;
+    el.innerHTML = `<div class="cart-empty"><div class="e-icon">🛒</div><p style="color:var(--gray);margin-bottom:16px">Your cart is empty</p><button class="btn-buy" style="width:auto;padding:12px 24px" onclick="showPage('home')">Continue Shopping</button></div>`;
     return;
   }
   const total = getTotal();
   el.innerHTML = cart.map(item => `
     <div class="cart-item">
-      <div class="cart-item-img">${item.images && item.images[0] ? `<img src="${item.images[0]}" onerror="this.style.display='none'"/>` : '📦'}</div>
-      <div><div class="cart-item-name">${item.name}</div><div class="cart-item-price">₹${item.price.toLocaleString('en-IN')}</div></div>
-      <button class="remove-btn" onclick="removeFromCart('${item.id}')">🗑️</button>
+      <div class="cart-item-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
+      <div>
+        <div class="cart-item-name">${esc(item.name)}</div>
+        <div class="cart-item-price">₹${inr(item.price * item.qty)}</div>
+        <div class="qty" style="margin-top:6px"><button onclick="changeQty('${esc(item.id)}',-1)">−</button><span>${item.qty}</span><button onclick="changeQty('${esc(item.id)}',1)">+</button></div>
+      </div>
+      <button class="remove-btn" onclick="removeFromCart('${esc(item.id)}')">🗑️</button>
     </div>`).join('') + `
     <div class="cart-summary">
-      <div class="summary-total"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
+      ${summaryRows(total)}
+      <div class="summary-total" style="margin-top:8px"><span>Total</span><span>₹${inr(total)}</span></div>
       <button class="checkout-btn" onclick="showPage('checkout')">Proceed to Checkout →</button>
     </div>`;
 }
@@ -718,17 +770,17 @@ function renderCheckoutPreview() {
   if (el) {
     el.innerHTML = cart.map(item => `
       <div class="order-preview">
-        <div class="order-preview-img">${item.images && item.images[0] ? `<img src="${item.images[0]}" onerror="this.style.display='none'"/>` : '📦'}</div>
-        <div><div class="order-preview-name">${item.name}</div><div class="order-preview-price">₹${item.price.toLocaleString('en-IN')}</div></div>
-      </div>`).join('');
+        <div class="order-preview-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
+        <div><div class="order-preview-name">${esc(item.name)}</div><div class="order-preview-price">₹${inr(item.price)} × ${item.qty}</div></div>
+      </div>`).join('') + (cart.length ? `<div class="form-card" style="margin-bottom:20px;padding:14px 18px">${summaryRows(total)}</div>` : '');
   }
-  document.getElementById('pay-amount').textContent = total.toLocaleString('en-IN');
+  document.getElementById('pay-amount').textContent = inr(total);
 }
 
 async function placeOrder() {
-  const name = document.getElementById('c-name').value.trim();
-  const email = document.getElementById('c-email').value.trim();
-  const phone = document.getElementById('c-phone').value.trim();
+  const v = id => document.getElementById(id).value.trim();
+  const name = v('c-name'), email = v('c-email'), phone = v('c-phone');
+  const address = v('c-address'), city = v('c-city'), state = v('c-state'), pincode = v('c-pincode');
   const errBox = document.getElementById('err-box');
   const payBtn = document.getElementById('pay-btn');
   const showErr = msg => { errBox.textContent = '❌ ' + msg; errBox.style.display = 'block'; };
@@ -737,66 +789,95 @@ async function placeOrder() {
   if (!name) return showErr('Name is required');
   if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return showErr('Valid email required');
   if (!phone.match(/^\d{10}$/)) return showErr('10 digit mobile number required');
+  if (address.length < 8) return showErr('Please enter your full delivery address');
+  if (!city) return showErr('City is required');
+  if (!state) return showErr('State is required');
+  if (!pincode.match(/^\d{6}$/)) return showErr('6 digit pincode required');
   if (cart.length === 0) return showErr('Cart is empty');
 
-  payBtn.textContent = '⏳ Processing...';
   payBtn.disabled = true;
+  const resetBtn = () => { payBtn.disabled = false; payBtn.innerHTML = `🔒 Pay ₹<span id="pay-amount">${inr(getTotal())}</span>`; };
+  payBtn.textContent = '⏳ Checking stock...';
 
+  // Re-check latest prices/stock from the database
+  try {
+    const fresh = await sb.get('digital_products', 'published=eq.true');
+    if (Array.isArray(fresh)) {
+      for (const it of cart) {
+        const p = fresh.find(x => x.id == it.id);
+        if (!p) { cart = cart.filter(c => c.id != it.id); saveCart(); renderCheckoutPreview(); resetBtn(); return showErr(it.name + ' is no longer available and was removed from your cart.'); }
+        if (p.stock != null && p.stock < TRACK_LIMIT && p.stock < it.qty) { resetBtn(); return showErr(`Only ${Math.max(p.stock, 0)} unit(s) of "${it.name}" available. Please update your cart.`); }
+        it.price = Number(p.price); it.stock = p.stock;
+      }
+      saveCart(); renderCheckoutPreview();
+    }
+  } catch (e) { /* proceed with cart values */ }
+
+  payBtn.textContent = '⏳ Processing...';
   const total = getTotal();
   const orderId = 'ORD-' + Date.now().toString(36).toUpperCase();
-  const deliveryLink = cart[0].delivery_link || '#';
-  const hasFile = !!cart[0].file_path;
+  const items = cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.qty }));
 
-  try {
-    await sb.post('digital_orders', {
-      order_id: orderId, customer_name: name, customer_email: email, customer_phone: phone,
-      amount: total, items: cart.map(i => ({ id: i.id, name: i.name, price: i.price })),
-      payment_status: 'pending', order_status: 'pending',
-    });
-  } catch(e) { console.log(e); }
+  await sb.post('digital_orders', {
+    order_id: orderId, customer_name: name, customer_email: email, customer_phone: phone,
+    customer_address: address, customer_city: city, customer_state: state, customer_pincode: pincode,
+    amount: total, items, payment_status: 'pending', order_status: 'pending',
+  });
 
   try {
     const cfRes = await fetch(`${API_URL}/api/orders/create`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: cart.map(i => ({ productId: String(i.id), quantity: 1, name: i.name, price: i.price })),
-        customer: { name, phone, email, address: 'Digital Product - No Address Required', city: '-', state: '-', pincode: '000000' },
+        items: cart.map(i => ({ productId: String(i.id), quantity: i.qty, name: i.name, price: i.price })),
+        customer: { name, phone, email, address, city, state, pincode },
         amount: total, orderId,
       })
     });
     const cfData = await cfRes.json();
-    console.log('Cashfree response:', cfData);
-
     if (cfData.paymentSessionId && window.Cashfree) {
-      sessionStorage.setItem('pendingOrder', JSON.stringify({ orderId, name, email, phone, amount: total, deliveryLink, hasFile }));
-      cart = []; saveCart();
+      try { sessionStorage.setItem('pendingOrder', JSON.stringify({ orderId })); } catch (e) {}
       const cf = window.Cashfree({ mode: 'production' });
       cf.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
       return;
-    } else {
-      // Show the actual error so we can debug without console access
-      const debugMsg = cfData.error || cfData.message || JSON.stringify(cfData).substring(0, 200) || 'Unknown error';
-      alert('⚠️ Payment gateway error:\n\n' + debugMsg + '\n\nOrder saved, but redirecting without payment. Please screenshot this and share.');
     }
-  } catch(e) {
-    alert('⚠️ Payment connection error:\n\n' + e.message + '\n\nPlease screenshot this and share.');
+    showErr('Payment could not be started: ' + (cfData.error || cfData.message || 'please try again') + '. Your cart is safe — no money was charged.');
+  } catch (e) {
+    showErr('Could not connect to the payment gateway (' + e.message + '). Your cart is safe — please try again.');
   }
-
-  cart = []; saveCart();
-  showDelivery(orderId, name, email, phone, total, deliveryLink, hasFile);
+  resetBtn();
 }
 
-function showDelivery(orderId, name, email, phone, total, deliveryLink, hasFile) {
-  const accessUrl = hasFile ? `access.html?order=${orderId}` : deliveryLink;
-  document.getElementById('access-link').href = accessUrl || '#';
-  document.getElementById('access-link').style.display = 'inline-block';
+function itemsHtml(items) {
+  return (items || []).map(i => `<div class="c-row"><span class="c-label">${esc(i.name)} × ${i.quantity || 1}</span><span class="c-val">₹${inr((i.price || 0) * (i.quantity || 1))}</span></div>`).join('');
+}
+
+function showConfirmation(order) {
+  document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Order Confirmed!</h1><p>Thank you for shopping with us. We'll ship your order soon — delivery in 3–7 business days.</p>`;
   document.getElementById('confirm-details').innerHTML = `
     <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
-    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
-    <div class="c-row"><span class="c-label">Name</span><span class="c-val">${name}</span></div>
-    <div class="c-row"><span class="c-label">Email</span><span class="c-val">${email}</span></div>
-    <div class="c-row"><span class="c-label">Amount</span><span class="c-val" style="color:var(--primary)">₹${Number(total).toLocaleString('en-IN')}</span></div>`;
+    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${esc(order.order_id)}</span></div>
+    <div class="c-row"><span class="c-label">Name</span><span class="c-val">${esc(order.customer_name)}</span></div>
+    <div class="c-row"><span class="c-label">Email</span><span class="c-val">${esc(order.customer_email)}</span></div>
+    <div class="c-row"><span class="c-label">Ship to</span><span class="c-val" style="text-align:right;max-width:60%">${esc(order.customer_address)}, ${esc(order.customer_city)}, ${esc(order.customer_state)} - ${esc(order.customer_pincode)}</span></div>
+    ${itemsHtml(order.items)}
+    <div class="c-row"><span class="c-label">Delivery</span><span class="c-val free">FREE</span></div>
+    <div class="c-row"><span class="c-label">Total Paid</span><span class="c-val" style="color:var(--primary)">₹${inr(order.amount)}</span></div>
+    <p style="margin-top:12px;font-size:12px;color:var(--gray)">Save your Order ID — use "Track Order" at the top to check status anytime.</p>`;
   showPage('confirmation');
+}
+
+async function deductStock(order) {
+  const key = 'stock_done_' + order.order_id;
+  try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+  for (const it of (order.items || [])) {
+    try {
+      const rows = await sb.get('digital_products', `id=eq.${encodeURIComponent(it.id)}`);
+      const p = Array.isArray(rows) ? rows[0] : null;
+      if (p && p.stock != null && p.stock < TRACK_LIMIT) {
+        await sb.patch('digital_products', `id=eq.${encodeURIComponent(it.id)}`, { stock: Math.max(0, p.stock - (it.quantity || 1)) });
+      }
+    } catch (e) {}
+  }
 }
 
 async function checkPaymentReturn() {
@@ -804,52 +885,30 @@ async function checkPaymentReturn() {
   if (params.get('status') === 'success' && params.get('order')) {
     const orderId = params.get('order');
     window.history.replaceState({}, '', window.location.pathname);
-
     try {
-      // Look up the Cashfree order id we stored when creating the payment
-      const paymentData = await sb.get('digital_payments', `order_id=eq.${orderId}`);
+      const paymentData = await sb.get('digital_payments', `order_id=eq.${encodeURIComponent(orderId)}`);
       const paymentRecord = Array.isArray(paymentData) ? paymentData[0] : null;
+      if (!paymentRecord || !paymentRecord.cashfree_order_id) { showPaymentFailed(orderId, 'Could not find payment record.'); return; }
 
-      if (!paymentRecord || !paymentRecord.cashfree_order_id) {
-        showPaymentFailed(orderId, 'Could not find payment record.');
-        return;
-      }
-
-      // REAL verification — ask backend to check with Cashfree directly
+      // Real verification: backend asks Cashfree directly
       const verifyRes = await fetch(`${API_URL}/api/orders/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, cfOrderId: paymentRecord.cashfree_order_id })
       });
       const verifyData = await verifyRes.json();
+      if (!verifyData.success) { showPaymentFailed(orderId, 'Payment was not completed. If money was deducted, Cashfree will refund it automatically within a few days.'); return; }
 
-      if (!verifyData.success) {
-        showPaymentFailed(orderId, 'Payment was not completed. If money was deducted, it will be refunded automatically by Cashfree within a few days.');
-        return;
-      }
-
-      // Payment genuinely confirmed paid — now fetch order + deliver
-      const orderData = await sb.get('digital_orders', `order_id=eq.${orderId}`);
+      const orderData = await sb.get('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`);
       const order = Array.isArray(orderData) ? orderData[0] : null;
-
+      cart = []; saveCart();
       if (!order) {
-        showConfirmationFallback(orderId);
+        document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Payment Successful!</h1><p>Please save your Order ID: ${esc(orderId)}</p>`;
+        document.getElementById('confirm-details').innerHTML = '';
+        showPage('confirmation');
         return;
       }
-
-      let deliveryLink = '#';
-      let hasFile = false;
-      const items = order.items || [];
-      if (items.length > 0) {
-        const productData = await sb.get('digital_products', `id=eq.${items[0].id}`);
-        const product = Array.isArray(productData) ? productData[0] : null;
-        if (product) {
-          deliveryLink = product.delivery_link || '#';
-          hasFile = !!product.file_path;
-        }
-      }
-
-      showDelivery(orderId, order.customer_name, order.customer_email, order.customer_phone, order.amount, deliveryLink, hasFile);
+      deductStock(order);
+      showConfirmation(order);
     } catch (e) {
       console.error('Payment return error:', e);
       showPaymentFailed(orderId, 'Something went wrong verifying your payment. Please contact support with your Order ID.');
@@ -858,100 +917,51 @@ async function checkPaymentReturn() {
 }
 
 function showPaymentFailed(orderId, message) {
+  document.getElementById('confirm-banner').innerHTML = `<div class="icon">⚠️</div><h1 style="color:#dc2626">Payment Not Confirmed</h1><p>Your order was not placed.</p>`;
+  document.getElementById('confirm-banner').style.cssText = 'background:#fef2f2;border-color:#fecaca';
   document.getElementById('confirm-details').innerHTML = `
-    <h2 style="font-size:16px;font-weight:800;margin-bottom:14px;color:#dc2626">⚠️ Payment Not Confirmed</h2>
-    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
-    <p style="margin-top:12px;font-size:13px;color:#6b7280">${message}</p>`;
-  const dCard = document.getElementById('delivery-card');
-  if (dCard) dCard.innerHTML = `<h2>❌ No Access</h2><p>Payment could not be verified — access not granted.</p>`;
+    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${esc(orderId)}</span></div>
+    <p style="margin-top:12px;font-size:13px;color:#6b7280">${esc(message)}</p>`;
   showPage('confirmation');
 }
 
-function showConfirmationFallback(orderId) {
-  document.getElementById('confirm-details').innerHTML = `
-    <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
-    <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${orderId}</span></div>
-    <div class="c-row"><span class="c-label">Status</span><span class="c-val" style="color:#16a34a">✅ Paid</span></div>
-    <div class="c-row"><span class="c-label">Note</span><span class="c-val" style="font-size:12px">Contact support with your Order ID for access</span></div>`;
-  document.getElementById('access-link').style.display = 'none';
-  showPage('confirmation');
+const TRACK_STEPS = ['Order Placed', 'Processing', 'Shipped', 'Delivered'];
+function trackIndex(o) {
+  if (o.order_status === 'delivered') return 3;
+  if (o.order_status === 'shipped') return 2;
+  if (o.order_status === 'processing') return 1;
+  return 0;
 }
 
-async function lookupPurchase() {
+async function trackOrder() {
   const orderId = document.getElementById('lookup-order').value.trim();
-  const email = document.getElementById('lookup-email').value.trim();
+  const email = document.getElementById('lookup-email').value.trim().toLowerCase();
   const errBox = document.getElementById('lookup-err');
   const resultsEl = document.getElementById('lookup-results');
   const btn = document.getElementById('lookup-btn');
+  errBox.style.display = 'none'; resultsEl.innerHTML = '';
+  const fail = m => { errBox.textContent = m; errBox.style.display = 'block'; };
+  if (!orderId || !email) return fail('❌ Please enter both Order ID and Email');
 
-  errBox.style.display = 'none';
-  resultsEl.innerHTML = '';
-
-  if (!orderId && !email) {
-    errBox.textContent = '❌ Please enter Order ID or Email';
-    errBox.style.display = 'block';
-    return;
-  }
-
-  btn.textContent = '⏳ Searching...';
-  btn.disabled = true;
-
+  btn.textContent = '⏳ Searching...'; btn.disabled = true;
   try {
-    let orders;
-    if (orderId) {
-      orders = await sb.get('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`);
-    } else {
-      orders = await sb.get('digital_orders', `customer_email=eq.${encodeURIComponent(email)}`);
-    }
-
-    if (!orders || orders.length === 0) {
-      errBox.textContent = '❌ No order found. Check your Order ID or Email.';
-      errBox.style.display = 'block';
-      return;
-    }
-
-    const paidOrders = orders.filter(o => o.payment_status === 'paid');
-    if (paidOrders.length === 0) {
-      errBox.textContent = '⚠️ Order found but payment not completed yet.';
-      errBox.style.display = 'block';
-      return;
-    }
-
-    let html = '';
-    for (const order of paidOrders) {
-      let deliveryLink = '#';
-      let hasFile = false;
-      const items = order.items || [];
-      if (items.length > 0) {
-        const productData = await sb.get('digital_products', `id=eq.${items[0].id}`);
-        const product = Array.isArray(productData) ? productData[0] : null;
-        if (product) {
-          deliveryLink = product.delivery_link || '#';
-          hasFile = !!product.file_path;
-        }
-      }
-      const accessUrl = hasFile ? `access.html?order=${order.order_id}` : deliveryLink;
-      const productName = items[0]?.name || 'Your Product';
-
-      html += `
-        <div class="delivery-card" style="margin-bottom:14px">
-          <h2 style="font-size:15px">${productName}</h2>
-          <p style="font-size:12px">Order: ${order.order_id}</p>
-          ${accessUrl && accessUrl !== '#'
-            ? `<a class="access-btn" href="${accessUrl}" target="_blank">📥 Access Now</a>`
-            : `<p style="font-size:12px">Link unavailable — contact support</p>`}
-        </div>`;
-    }
-    resultsEl.innerHTML = html;
-  } catch (e) {
-    errBox.textContent = '❌ Something went wrong. Try again.';
-    errBox.style.display = 'block';
-  } finally {
-    btn.textContent = '🔍 Find My Purchase';
-    btn.disabled = false;
-  }
+    const rows = await sb.get('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`);
+    const o = Array.isArray(rows) ? rows[0] : null;
+    if (!o || (o.customer_email || '').toLowerCase() !== email) return fail('❌ No order found. Check your Order ID and Email.');
+    if (o.payment_status !== 'paid') return fail('⚠️ Payment for this order has not been completed.');
+    if (o.order_status === 'cancelled') { resultsEl.innerHTML = `<div class="confirm-card"><h3 style="color:#dc2626">❌ Order Cancelled</h3><p style="font-size:13px;color:var(--gray);margin-top:6px">Contact support for refund details.</p></div>`; return; }
+    const idx = trackIndex(o);
+    resultsEl.innerHTML = `<div class="confirm-card">
+      <h3 style="font-size:15px;margin-bottom:4px">Order ${esc(o.order_id)}</h3>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:10px">${esc(o.customer_city)}, ${esc(o.customer_state)} • ₹${inr(o.amount)}</p>
+      ${TRACK_STEPS.map((s, i) => `<div class="track-step ${i <= idx ? 'done' : ''}"><div class="track-dot">${i <= idx ? '✓' : ''}</div>${s}</div>`).join('')}
+      <div style="margin-top:10px;border-top:1px solid #f3f4f6;padding-top:8px">${itemsHtml(o.items)}</div>
+    </div>`;
+  } catch (e) { fail('❌ Something went wrong. Try again.'); }
+  finally { btn.textContent = '🔍 Track Order'; btn.disabled = false; }
 }
 
+/* ---------------- ADMIN ---------------- */
 function adminLogin() {
   const u = document.getElementById('a-user').value;
   const p = document.getElementById('a-pass').value;
@@ -961,28 +971,31 @@ function adminLogin() {
 }
 
 async function loadAdmin() {
-  orders = await sb.get('digital_orders');
-  if (!orders || orders.error) orders = [];
+  const o = await sb.get('digital_orders');
+  orders = Array.isArray(o) ? o : [];
   renderStats(); renderRecentOrders(); renderAllOrders(); renderAdminProducts();
 }
 
+const paidOrders = () => orders.filter(o => o.payment_status === 'paid');
+
 function renderStats() {
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('s-total').textContent = orders.length;
-  document.getElementById('s-today').textContent = orders.filter(o => o.created_at && o.created_at.startsWith(today)).length;
-  document.getElementById('s-sales').textContent = '₹' + orders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + (o.amount || 0), 0).toLocaleString('en-IN');
-  document.getElementById('s-pending').textContent = orders.filter(o => o.order_status === 'pending').length;
+  const paid = paidOrders();
+  document.getElementById('s-total').textContent = paid.length;
+  document.getElementById('s-today').textContent = paid.filter(o => o.created_at && o.created_at.startsWith(today)).length;
+  document.getElementById('s-sales').textContent = '₹' + inr(paid.reduce((s, o) => s + Number(o.amount || 0), 0));
+  document.getElementById('s-pending').textContent = paid.filter(o => !['shipped', 'delivered', 'cancelled'].includes(o.order_status)).length;
 }
 
 function statusBadge(s) {
-  const cls = { pending: 's-pending', paid: 's-paid', processing: 's-processing', delivered: 's-delivered', cancelled: 's-cancelled' }[s] || 's-pending';
-  return `<span class="status-badge ${cls}">${(s || 'pending').toUpperCase()}</span>`;
+  const cls = { pending: 's-pending', paid: 's-paid', processing: 's-processing', shipped: 's-shipped', delivered: 's-delivered', cancelled: 's-cancelled', failed: 's-cancelled' }[s] || 's-pending';
+  return `<span class="status-badge ${cls}">${esc((s || 'pending').toUpperCase())}</span>`;
 }
 
 function renderRecentOrders() {
   const el = document.getElementById('recent-orders');
   if (!el) return;
-  el.innerHTML = orders.slice(0, 5).map(o => `<tr><td class="order-id-cell">${o.order_id}</td><td>${o.customer_name || '-'}</td><td>₹${(o.amount || 0).toLocaleString('en-IN')}</td><td>${statusBadge(o.order_status)}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
+  el.innerHTML = orders.slice(0, 5).map(o => `<tr><td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
 }
 
 function renderAllOrders(filtered = orders) {
@@ -990,80 +1003,88 @@ function renderAllOrders(filtered = orders) {
   if (!el) return;
   el.innerHTML = filtered.map(o => `
     <tr>
-      <td class="order-id-cell">${o.order_id}</td><td>${o.customer_name || '-'}</td><td>${o.customer_email || '-'}</td>
-      <td>₹${(o.amount || 0).toLocaleString('en-IN')}</td><td>${statusBadge(o.order_status)}</td>
-      <td><select class="status-select" onchange="updateOrderStatus('${o.order_id}', this.value)">${['pending','paid','delivered','cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-      <td><button class="view-btn" onclick="viewOrder('${o.order_id}')">View</button></td>
-    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
+      <td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>${esc(o.customer_city || '-')}</td>
+      <td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td>
+      <td><select class="status-select" onchange="updateOrderStatus('${esc(o.order_id)}', this.value)">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+      <td><button class="view-btn" onclick="viewOrder('${esc(o.order_id)}')">View</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
 }
 
 function searchOrders(q) {
-  const f = q ? orders.filter(o => o.order_id.toLowerCase().includes(q.toLowerCase()) || (o.customer_name || '').toLowerCase().includes(q.toLowerCase())) : orders;
-  renderAllOrders(f);
+  q = (q || '').toLowerCase();
+  renderAllOrders(q ? orders.filter(o => (o.order_id || '').toLowerCase().includes(q) || (o.customer_name || '').toLowerCase().includes(q)) : orders);
 }
 
 async function updateOrderStatus(orderId, status) {
-  await sb.patch('digital_orders', `order_id=eq.${orderId}`, { order_status: status });
+  const ok = await sb.patch('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`, { order_status: status, delivered: status === 'delivered' });
+  if (!ok) { toast('❌ Update failed'); return; }
   const o = orders.find(x => x.order_id === orderId);
   if (o) o.order_status = status;
-  renderStats(); renderRecentOrders();
+  renderStats(); renderRecentOrders(); renderAllOrders();
+  toast('✅ Status updated');
 }
 
 function viewOrder(orderId) {
   const o = orders.find(x => x.order_id === orderId);
   if (!o) return;
-  document.getElementById('modal-body').innerHTML = `
-    <div class="m-row"><div class="m-label">Order ID</div><div class="m-val" style="color:#8b5cf6;font-family:monospace">${o.order_id}</div></div>
-    <div class="m-row"><div class="m-label">Customer</div><div class="m-val">${o.customer_name || '-'}</div></div>
-    <div class="m-row"><div class="m-label">Email</div><div class="m-val">${o.customer_email || '-'}</div></div>
-    <div class="m-row"><div class="m-label">Phone</div><div class="m-val">${o.customer_phone || '-'}</div></div>
-    <div class="m-row"><div class="m-label">Amount</div><div class="m-val" style="color:#8b5cf6;font-size:18px">₹${(o.amount || 0).toLocaleString('en-IN')}</div></div>
-    <div class="m-row"><div class="m-label">Payment Status</div><div class="m-val">${statusBadge(o.payment_status)}</div></div>
-    <div class="m-row"><div class="m-label">Date</div><div class="m-val">${o.created_at ? new Date(o.created_at).toLocaleString('en-IN') : '-'}</div></div>`;
+  const row = (l, v, extra = '') => `<div class="m-row"><div class="m-label">${l}</div><div class="m-val" ${extra}>${v}</div></div>`;
+  document.getElementById('modal-body').innerHTML =
+    row('Order ID', esc(o.order_id), 'style="color:#8b5cf6;font-family:monospace"') +
+    row('Customer', esc(o.customer_name || '-')) +
+    row('Email', esc(o.customer_email || '-')) +
+    row('Phone', esc(o.customer_phone || '-')) +
+    row('Ship To', `${esc(o.customer_address || '-')}<br>${esc(o.customer_city || '')}, ${esc(o.customer_state || '')} - ${esc(o.customer_pincode || '')}`) +
+    row('Items', (o.items || []).map(i => `${esc(i.name)} × ${i.quantity || 1} — ₹${inr((i.price || 0) * (i.quantity || 1))}`).join('<br>') || '-') +
+    row('Amount', '₹' + inr(o.amount), 'style="color:#8b5cf6;font-size:18px"') +
+    row('Payment', statusBadge(o.payment_status)) +
+    row('Order Status', statusBadge(o.order_status)) +
+    row('Date', o.created_at ? new Date(o.created_at).toLocaleString('en-IN') : '-');
   document.getElementById('modal').style.display = 'flex';
 }
 
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
 function adminTab(tab) {
-  ['dashboard','analytics','orders','products'].forEach(t => {
+  ['dashboard', 'analytics', 'orders', 'products'].forEach(t => {
     document.getElementById('admin-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'analytics') renderAnalytics();
 }
 
-function toggleProductForm() {
+function toggleProductForm(forceOpen) {
   const f = document.getElementById('p-form');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  f.style.display = (forceOpen === true || f.style.display === 'none') ? 'block' : 'none';
 }
 
 function editProduct(id) {
   const p = products.find(x => x.id == id);
   if (!p) return;
-  editingProductId = id;
+  editingProductId = p.id;
   window.editingExistingImage = (p.images && p.images[0]) || '';
-  document.getElementById('p-name').value = p.name || '';
-  document.getElementById('p-type').value = p.product_type || 'ebook';
-  document.getElementById('p-price').value = p.price || '';
-  document.getElementById('p-orig').value = p.original_price || '';
-  document.getElementById('p-disc').value = p.discount || 0;
+  const set = (k, v) => document.getElementById(k).value = v;
+  set('p-name', p.name || '');
+  const sel = document.getElementById('p-type');
+  if (p.product_type && ![...sel.options].some(o => o.value === p.product_type)) sel.add(new Option(p.product_type, p.product_type));
+  sel.value = p.product_type || 'Other';
+  set('p-price', p.price || ''); set('p-orig', p.original_price || ''); set('p-disc', p.discount || 0);
+  set('p-stock', p.stock != null && p.stock < TRACK_LIMIT ? p.stock : '');
+  set('p-desc', p.description || '');
+  document.getElementById('p-img').value = '';
   document.getElementById('img-upload-status').textContent = window.editingExistingImage ? '📷 Current image set — upload new to replace' : '';
-  document.getElementById('p-delivery').value = p.delivery_link || '';
-  document.getElementById('p-desc').value = p.description || '';
   document.getElementById('p-form-title').textContent = '✏️ Edit Product';
   document.getElementById('p-save-btn').textContent = '✅ Update Product';
-  document.getElementById('p-form').style.display = 'block';
+  toggleProductForm(true);
   document.getElementById('p-form').scrollIntoView({ behavior: 'smooth' });
 }
 
 function resetProductForm() {
   editingProductId = null;
   window.editingExistingImage = '';
-  document.getElementById('p-form-title').textContent = '➕ Add New Digital Product';
+  document.getElementById('p-form-title').textContent = '➕ Add New Product';
   document.getElementById('p-save-btn').textContent = '✅ Save Product';
   document.getElementById('img-upload-status').textContent = '';
-  ['p-name','p-price','p-orig','p-disc','p-delivery','p-desc'].forEach(id => document.getElementById(id).value = '');
+  ['p-name', 'p-price', 'p-orig', 'p-disc', 'p-stock', 'p-desc'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('p-img').value = '';
 }
 
@@ -1073,13 +1094,12 @@ async function saveProduct() {
   const price = parseFloat(document.getElementById('p-price').value);
   const orig = parseFloat(document.getElementById('p-orig').value) || price;
   const disc = parseInt(document.getElementById('p-disc').value) || 0;
+  const stockVal = document.getElementById('p-stock').value;
+  const stock = stockVal === '' ? 999999 : Math.max(0, parseInt(stockVal) || 0);
   const imgInput = document.getElementById('p-img');
-  const delivery = document.getElementById('p-delivery').value.trim();
   const desc = document.getElementById('p-desc').value.trim();
-  const fileInput = document.getElementById('p-file');
   if (!name || !price) { alert('Name and price required!'); return; }
 
-  // Determine final image URL: new upload > existing (edit mode) > empty
   let imageUrl = window.editingExistingImage || '';
   if (imgInput.files && imgInput.files[0]) {
     const imgStatus = document.getElementById('img-upload-status');
@@ -1087,70 +1107,29 @@ async function saveProduct() {
     try {
       const imgFile = imgInput.files[0];
       const imgBase64 = await fileToBase64(imgFile);
-      const imgUploadRes = await fetch(`${API_URL}/api/admin/upload-image`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API_URL}/api/admin/upload-image`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileBase64: imgBase64, fileName: imgFile.name, productId: editingProductId || 'new' })
       });
-      const imgUploadData = await imgUploadRes.json();
-      if (imgUploadData.url) {
-        imageUrl = imgUploadData.url;
-        imgStatus.textContent = '✅ Image uploaded!';
-      } else {
-        imgStatus.textContent = '❌ Image upload failed: ' + (imgUploadData.error || 'unknown error');
-        return;
-      }
-    } catch (e) {
-      document.getElementById('img-upload-status').textContent = '❌ Image upload error: ' + e.message;
-      return;
-    }
+      const data = await res.json();
+      if (data.url) { imageUrl = data.url; imgStatus.textContent = '✅ Image uploaded!'; }
+      else { imgStatus.textContent = '❌ Image upload failed: ' + (data.error || 'unknown error'); return; }
+    } catch (e) { document.getElementById('img-upload-status').textContent = '❌ Image upload error: ' + e.message; return; }
   }
 
-  const productData = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: imageUrl ? [imageUrl] : [], delivery_link: delivery, published: true, stock: 999999 };
-
-  // Handle PDF file upload if provided
-  if (fileInput.files && fileInput.files[0]) {
-    const uploadStatus = document.getElementById('upload-status');
-    uploadStatus.textContent = '⏳ Uploading file...';
-    try {
-      const file = fileInput.files[0];
-      const base64 = await fileToBase64(file);
-      const uploadRes = await fetch(`${API_URL}/api/admin/upload-file`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileBase64: base64, fileName: file.name, productId: editingProductId || 'new' })
-      });
-      const uploadData = await uploadRes.json();
-      if (uploadData.path) {
-        productData.file_path = uploadData.path;
-        uploadStatus.textContent = '✅ File uploaded!';
-      } else {
-        uploadStatus.textContent = '❌ Upload failed: ' + (uploadData.error || 'unknown error');
-        return;
-      }
-    } catch (e) {
-      uploadStatus.textContent = '❌ Upload error: ' + e.message;
-      return;
-    }
-  }
+  const productData = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: imageUrl ? [imageUrl] : [], published: true, stock };
 
   if (editingProductId) {
-    const ok = await sb.patch('digital_products', `id=eq.${editingProductId}`, productData);
-    if (ok) {
-      toast('✅ Product updated!');
-      const idx = products.findIndex(p => p.id == editingProductId);
-      if (idx > -1) products[idx] = { ...products[idx], ...productData };
-      renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
-    } else { alert('Update failed — try again'); }
+    const ok = await sb.patch('digital_products', `id=eq.${encodeURIComponent(editingProductId)}`, productData);
+    if (!ok) { alert('Update failed — try again'); return; }
+    toast('✅ Product updated!');
   } else {
     const saved = await sb.post('digital_products', productData);
-    if (saved) {
-      toast('✅ Product saved!');
-      productData.id = Date.now();
-      products.push(productData);
-      renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
-    } else { alert('Save failed:\n\n' + (window.lastSupabaseError || 'Unknown error') + '\n\nPlease screenshot this and share.'); }
+    if (!saved) { alert('Save failed:\n\n' + (window.lastSupabaseError || 'Unknown error')); return; }
+    toast('✅ Product saved!');
   }
+  await loadProducts();
+  renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
 }
 
 function fileToBase64(file) {
@@ -1164,7 +1143,7 @@ function fileToBase64(file) {
 
 async function deleteProduct(id) {
   if (!confirm('Delete this product?')) return;
-  await sb.delete('digital_products', `id=eq.${id}`);
+  await sb.delete('digital_products', `id=eq.${encodeURIComponent(id)}`);
   products = products.filter(p => p.id != id);
   renderGrid(); renderAdminProducts();
 }
@@ -1174,64 +1153,58 @@ function renderAdminProducts() {
   if (!el) return;
   el.innerHTML = products.map(p => `
     <div class="product-admin-card">
-      <div class="product-admin-img">${p.images && p.images[0] ? `<img src="${p.images[0]}" onerror="this.style.display='none'"/>` : (typeIcon[p.product_type] || '📦')}</div>
+      <div class="product-admin-img">${p.images && p.images[0] ? `<img src="${esc(p.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
       <div class="product-admin-body">
-        <div class="product-admin-name">${p.name}</div>
-        <div class="product-admin-price">₹${p.price.toLocaleString('en-IN')}</div>
+        <div class="product-admin-name">${esc(p.name)}</div>
+        <div class="product-admin-price">₹${inr(p.price)} <span style="color:#9ca3af;font-size:11px;font-weight:600">• ${p.stock != null && p.stock < TRACK_LIMIT ? p.stock + ' in stock' : 'unlimited'}</span></div>
         <div style="display:flex;gap:6px">
-          <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct('${p.id}')">✏️ Edit</button>
-          <button class="delete-btn" style="flex:1" onclick="deleteProduct('${p.id}')">🗑️</button>
+          <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct('${esc(p.id)}')">✏️ Edit</button>
+          <button class="delete-btn" style="flex:1" onclick="deleteProduct('${esc(p.id)}')">🗑️</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`).join('') || '<p style="color:#9ca3af">No products yet — add your first one.</p>';
 }
 
 function renderAnalytics() {
-  const paid = orders.filter(o => o.payment_status === 'paid');
+  const paid = paidOrders();
   const conv = orders.length ? Math.round((paid.length / orders.length) * 100) : 0;
-  const totalRev = paid.reduce((s, o) => s + (o.amount || 0), 0);
+  const totalRev = paid.reduce((s, o) => s + Number(o.amount || 0), 0);
   const aov = paid.length ? Math.round(totalRev / paid.length) : 0;
-
   const now = new Date();
   const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
   const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 30);
-  const weekRev = paid.filter(o => o.created_at && new Date(o.created_at) >= weekAgo).reduce((s, o) => s + (o.amount || 0), 0);
-  const monthRev = paid.filter(o => o.created_at && new Date(o.created_at) >= monthAgo).reduce((s, o) => s + (o.amount || 0), 0);
+  const sumSince = d => paid.filter(o => o.created_at && new Date(o.created_at + 'Z') >= d).reduce((s, o) => s + Number(o.amount || 0), 0);
 
   document.getElementById('an-conv').textContent = conv + '%';
-  document.getElementById('an-aov').textContent = '₹' + aov.toLocaleString('en-IN');
-  document.getElementById('an-week').textContent = '₹' + weekRev.toLocaleString('en-IN');
-  document.getElementById('an-month').textContent = '₹' + monthRev.toLocaleString('en-IN');
+  document.getElementById('an-aov').textContent = '₹' + inr(aov);
+  document.getElementById('an-week').textContent = '₹' + inr(sumSince(weekAgo));
+  document.getElementById('an-month').textContent = '₹' + inr(sumSince(monthAgo));
 
-  // Last 7 days chart
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now); d.setDate(now.getDate() - i);
     const dayStr = d.toISOString().split('T')[0];
-    const dayRev = paid.filter(o => o.created_at && o.created_at.startsWith(dayStr)).reduce((s, o) => s + (o.amount || 0), 0);
+    const dayRev = paid.filter(o => o.created_at && o.created_at.startsWith(dayStr)).reduce((s, o) => s + Number(o.amount || 0), 0);
     days.push({ label: d.toLocaleDateString('en-IN', { weekday: 'short' }), rev: dayRev });
   }
   const maxRev = Math.max(...days.map(d => d.rev), 1);
   document.getElementById('an-chart').innerHTML = `<div class="chart-row">${days.map(d => `
     <div class="chart-bar-wrap">
-      <div class="chart-value">₹${d.rev >= 1000 ? Math.round(d.rev/1000)+'k' : d.rev}</div>
+      <div class="chart-value">₹${d.rev >= 1000 ? Math.round(d.rev / 1000) + 'k' : d.rev}</div>
       <div class="chart-bar" style="height:${Math.max((d.rev / maxRev) * 100, 3)}%"></div>
       <div class="chart-label">${d.label}</div>
     </div>`).join('')}</div>`;
 
-  // Top products
   const productSales = {};
-  paid.forEach(o => {
-    (o.items || []).forEach(item => {
-      const key = item.name || 'Unknown';
-      if (!productSales[key]) productSales[key] = { units: 0, revenue: 0 };
-      productSales[key].units += (item.quantity || 1);
-      productSales[key].revenue += (item.price || 0) * (item.quantity || 1);
-    });
-  });
-  const topProducts = Object.entries(productSales).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10);
-  document.getElementById('an-top-products').innerHTML = topProducts.map(([name, d], i) => `
-    <tr><td>${i + 1}</td><td>${name}</td><td>${d.units}</td><td>₹${d.revenue.toLocaleString('en-IN')}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:20px">No sales data yet</td></tr>';
+  paid.forEach(o => (o.items || []).forEach(item => {
+    const key = item.name || 'Unknown';
+    if (!productSales[key]) productSales[key] = { units: 0, revenue: 0 };
+    productSales[key].units += (item.quantity || 1);
+    productSales[key].revenue += (item.price || 0) * (item.quantity || 1);
+  }));
+  const top = Object.entries(productSales).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10);
+  document.getElementById('an-top-products').innerHTML = top.map(([name, d], i) => `
+    <tr><td>${i + 1}</td><td>${esc(name)}</td><td>${d.units}</td><td>₹${inr(d.revenue)}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:20px">No sales data yet</td></tr>';
 }
 
 init();

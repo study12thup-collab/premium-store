@@ -288,6 +288,17 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 .track-dot{width:22px;height:22px;border-radius:50%;background:#e5e7eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .track-step.done .track-dot{background:#10b981}
 .s-shipped{background:#1e3a8a;color:#93c5fd}
+.thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.thumbs img{width:56px;height:70px;object-fit:cover;border-radius:8px;border:2px solid transparent;cursor:pointer}
+.thumbs img.on{border-color:var(--primary)}
+.img-list{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.img-item{position:relative;width:78px}
+.img-item img{width:78px;height:98px;object-fit:cover;border-radius:8px;border:2px solid #3d3d5c}
+.img-item.main img{border-color:#10b981}
+.img-item .x{position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;width:20px;height:20px;border-radius:50%;font-size:12px;line-height:20px;text-align:center}
+.img-item .mk{display:block;width:100%;margin-top:4px;background:#3d3d5c;color:#fff;font-size:10px;padding:3px;border-radius:6px}
+.img-item.main .mk{background:#059669}
+.track-note{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
 .empty-shop{grid-column:1/-1;text-align:center;color:var(--gray);padding:40px 10px}
 </style>
 </head>
@@ -452,8 +463,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
       <h1>⚙️ Admin Panel</h1>
       <p>Store Management</p>
       <div class="error-box" id="admin-err"></div>
-      <div class="form-group"><label>Username</label><input type="text" id="a-user" value="admin"/></div>
-      <div class="form-group"><label>Password</label><input type="password" id="a-pass" value="admin123"/></div>
+      <div class="form-group"><label>Admin Password</label><input type="password" id="a-pass" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')adminLogin()"/></div>
       <button class="login-btn" onclick="adminLogin()">🔐 Login</button>
       <div class="back-mini"><a href="#" onclick="showPage('home');return false">← Back to Store</a></div>
     </div>
@@ -500,7 +510,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
         </div>
       </div>
       <div id="admin-orders" style="display:none">
-        <input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders(this.value)"/>
+        <div style="display:flex;gap:10px;margin-bottom:0"><input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders()"/><select class="status-select" id="order-filter" onchange="searchOrders()" style="margin-bottom:16px;height:42px"><option value="">All</option><option value="paid">Paid</option><option value="pending">Unpaid</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div>
         <div class="admin-card">
           <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Amount</th><th>Payment</th><th>Status</th><th>Update</th><th>Action</th></tr></thead><tbody id="all-orders"></tbody></table></div>
         </div>
@@ -525,10 +535,12 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
             <div class="form-group"><label>Stock (units)</label><input type="number" id="p-stock" placeholder="e.g. 50"/></div>
           </div>
           <div class="form-group">
-            <label>Product Image</label>
-            <input type="file" id="p-img" accept="image/*"/>
+            <label>Product Images (select many — first one is the main image)</label>
+            <input type="file" id="p-img" accept="image/*" multiple onchange="uploadImages(this)"/>
             <div id="img-upload-status" style="font-size:12px;color:#9ca3af;margin-top:6px"></div>
+            <div class="img-list" id="img-list"></div>
           </div>
+          <div class="form-group"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="p-pub" checked style="width:auto"/> Visible in store</label></div>
           <div class="form-group"><label>Description</label><textarea id="p-desc" rows="3" placeholder="Product details, size, material, warranty..."></textarea></div>
           <button class="save-btn" id="p-save-btn" onclick="saveProduct()">✅ Save Product</button>
           <button class="cancel-btn" onclick="toggleProductForm()">Cancel</button>
@@ -562,6 +574,11 @@ const sb = {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, { method: 'PATCH', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     return r.ok;
   },
+  async rpc(fn, args) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+    if (!r.ok) { window.lastSupabaseError = await r.text().catch(() => ''); return null; }
+    return r.json();
+  },
   async delete(table, filter) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
     return r.ok;
@@ -578,6 +595,8 @@ try { cart = JSON.parse(localStorage.getItem('es_cart') || '[]'); } catch (e) { 
 let orders = [];
 let currentProduct = null;
 let editingProductId = null;
+let adminPw = '';
+let formImages = [];
 
 async function loadProducts() {
   try {
@@ -681,7 +700,8 @@ function productCard(p, idx) {
 
 function renderGrid() {
   const g = document.getElementById('grid-products');
-  if (g) g.innerHTML = products.length ? products.map((p, i) => productCard(p, i)).join('') : '<div class="empty-shop">Products coming soon!</div>';
+  const vis = products.filter(p => p.published !== false);
+  if (g) g.innerHTML = vis.length ? vis.map((p, i) => productCard(p, i)).join('') : '<div class="empty-shop">Products coming soon!</div>';
 }
 
 let detailQty = 1;
@@ -693,9 +713,10 @@ function openProduct(id) {
   const orig = p.original_price || p.price;
   const save = orig - p.price;
   const out = isOut(p);
-  const img = (p.images && p.images[0]) ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}"/>` : '📦';
+  const img = (p.images && p.images[0]) ? `<img id="detail-main" src="${esc(p.images[0])}" alt="${esc(p.name)}"/>` : '📦';
+  const thumbs = (p.images && p.images.length > 1) ? `<div class="thumbs">${p.images.map((u, i) => `<img src="${esc(u)}" class="${i === 0 ? 'on' : ''}" onclick="swapImg(this)"/>`).join('')}</div>` : '';
   document.getElementById('detail-content').innerHTML = `
-    <div><div class="detail-img">${img}</div></div>
+    <div><div class="detail-img">${img}</div>${thumbs}</div>
     <div class="detail-info">
       ${p.product_type ? `<div class="detail-type">${esc(p.product_type)}</div>` : ''}
       <h1>${esc(p.name)}</h1>
@@ -719,6 +740,11 @@ function openProduct(id) {
       <div class="instant-note">🔒 Secured by Cashfree Payments</div>
     </div>`;
   showPage('detail');
+}
+
+function swapImg(el) {
+  document.getElementById('detail-main').src = el.src;
+  document.querySelectorAll('.thumbs img').forEach(i => i.classList.toggle('on', i === el));
 }
 
 function detailChange(d) {
@@ -866,19 +892,7 @@ function showConfirmation(order) {
   showPage('confirmation');
 }
 
-async function deductStock(order) {
-  const key = 'stock_done_' + order.order_id;
-  try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
-  for (const it of (order.items || [])) {
-    try {
-      const rows = await sb.get('digital_products', `id=eq.${encodeURIComponent(it.id)}`);
-      const p = Array.isArray(rows) ? rows[0] : null;
-      if (p && p.stock != null && p.stock < TRACK_LIMIT) {
-        await sb.patch('digital_products', `id=eq.${encodeURIComponent(it.id)}`, { stock: Math.max(0, p.stock - (it.quantity || 1)) });
-      }
-    } catch (e) {}
-  }
-}
+function deductStock(order) { sb.rpc('decrement_stock', { p_order_id: order.order_id }); }
 
 async function checkPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
@@ -955,6 +969,7 @@ async function trackOrder() {
       <h3 style="font-size:15px;margin-bottom:4px">Order ${esc(o.order_id)}</h3>
       <p style="font-size:12px;color:var(--gray);margin-bottom:10px">${esc(o.customer_city)}, ${esc(o.customer_state)} • ₹${inr(o.amount)}</p>
       ${TRACK_STEPS.map((s, i) => `<div class="track-step ${i <= idx ? 'done' : ''}"><div class="track-dot">${i <= idx ? '✓' : ''}</div>${s}</div>`).join('')}
+      ${o.tracking_info ? `<div class="track-note">🚚 ${esc(o.tracking_info)}</div>` : ''}
       <div style="margin-top:10px;border-top:1px solid #f3f4f6;padding-top:8px">${itemsHtml(o.items)}</div>
     </div>`;
   } catch (e) { fail('❌ Something went wrong. Try again.'); }
@@ -962,17 +977,19 @@ async function trackOrder() {
 }
 
 /* ---------------- ADMIN ---------------- */
-function adminLogin() {
-  const u = document.getElementById('a-user').value;
+async function adminLogin() {
   const p = document.getElementById('a-pass').value;
   const err = document.getElementById('admin-err');
-  if (u === 'admin' && p === 'admin123') { err.style.display = 'none'; showPage('admin'); }
-  else { err.textContent = '❌ Wrong credentials'; err.style.display = 'block'; }
+  const ok = await sb.rpc('admin_check', { p_password: p });
+  if (ok === true) { adminPw = p; err.style.display = 'none'; document.getElementById('a-pass').value = ''; showPage('admin'); }
+  else { err.textContent = '❌ Wrong password'; err.style.display = 'block'; }
 }
 
 async function loadAdmin() {
   const o = await sb.get('digital_orders');
   orders = Array.isArray(o) ? o : [];
+  const ap = await sb.rpc('admin_list_products', { p_password: adminPw });
+  if (Array.isArray(ap)) products = ap;
   renderStats(); renderRecentOrders(); renderAllOrders(); renderAdminProducts();
 }
 
@@ -1010,18 +1027,33 @@ function renderAllOrders(filtered = orders) {
     </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
 }
 
-function searchOrders(q) {
-  q = (q || '').toLowerCase();
-  renderAllOrders(q ? orders.filter(o => (o.order_id || '').toLowerCase().includes(q) || (o.customer_name || '').toLowerCase().includes(q)) : orders);
+function searchOrders() {
+  const q = (document.getElementById('order-search').value || '').toLowerCase();
+  const f = document.getElementById('order-filter').value;
+  renderAllOrders(orders.filter(o => {
+    if (q && !((o.order_id || '').toLowerCase().includes(q) || (o.customer_name || '').toLowerCase().includes(q))) return false;
+    if (f === 'paid') return o.payment_status === 'paid';
+    if (f === 'pending') return o.payment_status !== 'paid';
+    if (f) return o.order_status === f && o.payment_status === 'paid';
+    return true;
+  }));
 }
 
-async function updateOrderStatus(orderId, status) {
-  const ok = await sb.patch('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`, { order_status: status, delivered: status === 'delivered' });
-  if (!ok) { toast('❌ Update failed'); return; }
+async function updateOrderStatus(orderId, status, tracking) {
   const o = orders.find(x => x.order_id === orderId);
-  if (o) o.order_status = status;
-  renderStats(); renderRecentOrders(); renderAllOrders();
-  toast('✅ Status updated');
+  if (tracking === undefined) tracking = o ? (o.tracking_info || '') : '';
+  const ok = await sb.rpc('admin_update_order', { p_password: adminPw, p_order_id: orderId, p_status: status, p_tracking: tracking });
+  if (ok !== true) { toast('❌ Update failed'); loadAdmin(); return false; }
+  if (o) { o.order_status = status; o.tracking_info = tracking; o.delivered = status === 'delivered'; }
+  renderStats(); renderRecentOrders(); searchOrders();
+  toast('✅ Order updated');
+  return true;
+}
+
+async function saveOrderFromModal(orderId) {
+  const status = document.getElementById('m-status').value;
+  const tracking = document.getElementById('m-tracking').value.trim();
+  if (await updateOrderStatus(orderId, status, tracking)) closeModal();
 }
 
 function viewOrder(orderId) {
@@ -1037,7 +1069,10 @@ function viewOrder(orderId) {
     row('Items', (o.items || []).map(i => `${esc(i.name)} × ${i.quantity || 1} — ₹${inr((i.price || 0) * (i.quantity || 1))}`).join('<br>') || '-') +
     row('Amount', '₹' + inr(o.amount), 'style="color:#8b5cf6;font-size:18px"') +
     row('Payment', statusBadge(o.payment_status)) +
-    row('Order Status', statusBadge(o.order_status)) +
+    (o.payment_status === 'paid' ? `<div class="m-row"><div class="m-label">Update Order</div>
+      <select id="m-status" class="status-select" style="width:100%;margin-bottom:8px">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <input id="m-tracking" class="admin-search" style="margin-bottom:8px" placeholder="Courier / tracking number (customer can see this)" value="${esc(o.tracking_info || '')}"/>
+      <button class="save-btn" onclick="saveOrderFromModal('${esc(o.order_id)}')">💾 Save</button></div>` : row('Order Status', statusBadge(o.order_status)) + '<div class="m-row" style="color:#fca5a5;font-size:12px">Payment not completed — do not ship.</div>') +
     row('Date', o.created_at ? new Date(o.created_at).toLocaleString('en-IN') : '-');
   document.getElementById('modal').style.display = 'flex';
 }
@@ -1057,11 +1092,40 @@ function toggleProductForm(forceOpen) {
   f.style.display = (forceOpen === true || f.style.display === 'none') ? 'block' : 'none';
 }
 
+function renderFormImages() {
+  document.getElementById('img-list').innerHTML = formImages.map((u, i) => `
+    <div class="img-item ${i === 0 ? 'main' : ''}"><img src="${esc(u)}"/><span class="x" onclick="removeFormImage(${i})">×</span>
+    <button class="mk" onclick="makeMain(${i})">${i === 0 ? '★ Main' : 'Make main'}</button></div>`).join('');
+}
+function removeFormImage(i) { formImages.splice(i, 1); renderFormImages(); }
+function makeMain(i) { formImages.unshift(formImages.splice(i, 1)[0]); renderFormImages(); }
+
+async function uploadImages(input) {
+  const files = [...(input.files || [])];
+  const st = document.getElementById('img-upload-status');
+  for (let n = 0; n < files.length; n++) {
+    st.textContent = `⏳ Uploading ${n + 1} of ${files.length}...`;
+    try {
+      const f = files[n];
+      const res = await fetch(`${API_URL}/api/admin/upload-image`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileBase64: await fileToBase64(f), fileName: f.name, productId: editingProductId || 'new' })
+      });
+      const data = await res.json();
+      if (data.url) formImages.push(data.url);
+      else { st.textContent = '❌ Upload failed: ' + (data.error || 'unknown error'); return; }
+    } catch (e) { st.textContent = '❌ Upload error: ' + e.message; return; }
+    renderFormImages();
+  }
+  st.textContent = files.length ? `✅ ${files.length} image(s) uploaded` : '';
+  input.value = '';
+}
+
 function editProduct(id) {
   const p = products.find(x => x.id == id);
   if (!p) return;
   editingProductId = p.id;
-  window.editingExistingImage = (p.images && p.images[0]) || '';
+  formImages = Array.isArray(p.images) ? [...p.images] : [];
   const set = (k, v) => document.getElementById(k).value = v;
   set('p-name', p.name || '');
   const sel = document.getElementById('p-type');
@@ -1070,8 +1134,10 @@ function editProduct(id) {
   set('p-price', p.price || ''); set('p-orig', p.original_price || ''); set('p-disc', p.discount || 0);
   set('p-stock', p.stock != null && p.stock < TRACK_LIMIT ? p.stock : '');
   set('p-desc', p.description || '');
+  document.getElementById('p-pub').checked = p.published !== false;
   document.getElementById('p-img').value = '';
-  document.getElementById('img-upload-status').textContent = window.editingExistingImage ? '📷 Current image set — upload new to replace' : '';
+  document.getElementById('img-upload-status').textContent = '';
+  renderFormImages();
   document.getElementById('p-form-title').textContent = '✏️ Edit Product';
   document.getElementById('p-save-btn').textContent = '✅ Update Product';
   toggleProductForm(true);
@@ -1080,55 +1146,34 @@ function editProduct(id) {
 
 function resetProductForm() {
   editingProductId = null;
-  window.editingExistingImage = '';
+  formImages = [];
   document.getElementById('p-form-title').textContent = '➕ Add New Product';
   document.getElementById('p-save-btn').textContent = '✅ Save Product';
   document.getElementById('img-upload-status').textContent = '';
   ['p-name', 'p-price', 'p-orig', 'p-disc', 'p-stock', 'p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-pub').checked = true;
   document.getElementById('p-img').value = '';
+  renderFormImages();
 }
 
 async function saveProduct() {
   const name = document.getElementById('p-name').value.trim();
-  const type = document.getElementById('p-type').value;
   const price = parseFloat(document.getElementById('p-price').value);
-  const orig = parseFloat(document.getElementById('p-orig').value) || price;
-  const disc = parseInt(document.getElementById('p-disc').value) || 0;
   const stockVal = document.getElementById('p-stock').value;
-  const stock = stockVal === '' ? 999999 : Math.max(0, parseInt(stockVal) || 0);
-  const imgInput = document.getElementById('p-img');
-  const desc = document.getElementById('p-desc').value.trim();
   if (!name || !price) { alert('Name and price required!'); return; }
-
-  let imageUrl = window.editingExistingImage || '';
-  if (imgInput.files && imgInput.files[0]) {
-    const imgStatus = document.getElementById('img-upload-status');
-    imgStatus.textContent = '⏳ Uploading image...';
-    try {
-      const imgFile = imgInput.files[0];
-      const imgBase64 = await fileToBase64(imgFile);
-      const res = await fetch(`${API_URL}/api/admin/upload-image`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileBase64: imgBase64, fileName: imgFile.name, productId: editingProductId || 'new' })
-      });
-      const data = await res.json();
-      if (data.url) { imageUrl = data.url; imgStatus.textContent = '✅ Image uploaded!'; }
-      else { imgStatus.textContent = '❌ Image upload failed: ' + (data.error || 'unknown error'); return; }
-    } catch (e) { document.getElementById('img-upload-status').textContent = '❌ Image upload error: ' + e.message; return; }
-  }
-
-  const productData = { name, product_type: type, price, original_price: orig, discount: disc, description: desc, images: imageUrl ? [imageUrl] : [], published: true, stock };
-
-  if (editingProductId) {
-    const ok = await sb.patch('digital_products', `id=eq.${encodeURIComponent(editingProductId)}`, productData);
-    if (!ok) { alert('Update failed — try again'); return; }
-    toast('✅ Product updated!');
-  } else {
-    const saved = await sb.post('digital_products', productData);
-    if (!saved) { alert('Save failed:\n\n' + (window.lastSupabaseError || 'Unknown error')); return; }
-    toast('✅ Product saved!');
-  }
-  await loadProducts();
+  const data = {
+    name, product_type: document.getElementById('p-type').value, price,
+    original_price: parseFloat(document.getElementById('p-orig').value) || price,
+    discount: parseInt(document.getElementById('p-disc').value) || 0,
+    description: document.getElementById('p-desc').value.trim(),
+    images: formImages, published: document.getElementById('p-pub').checked,
+    stock: stockVal === '' ? 999999 : Math.max(0, parseInt(stockVal) || 0),
+  };
+  const ok = await sb.rpc('admin_save_product', { p_password: adminPw, p_id: editingProductId, p_data: data });
+  if (ok !== true) { alert('Save failed — please try again.\n\n' + (window.lastSupabaseError || '')); return; }
+  toast(editingProductId ? '✅ Product updated!' : '✅ Product saved!');
+  const ap = await sb.rpc('admin_list_products', { p_password: adminPw });
+  if (Array.isArray(ap)) products = ap;
   renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
 }
 
@@ -1143,7 +1188,8 @@ function fileToBase64(file) {
 
 async function deleteProduct(id) {
   if (!confirm('Delete this product?')) return;
-  await sb.delete('digital_products', `id=eq.${encodeURIComponent(id)}`);
+  const ok = await sb.rpc('admin_delete_product', { p_password: adminPw, p_id: id });
+  if (ok !== true) { toast('❌ Delete failed'); return; }
   products = products.filter(p => p.id != id);
   renderGrid(); renderAdminProducts();
 }
@@ -1155,7 +1201,7 @@ function renderAdminProducts() {
     <div class="product-admin-card">
       <div class="product-admin-img">${p.images && p.images[0] ? `<img src="${esc(p.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
       <div class="product-admin-body">
-        <div class="product-admin-name">${esc(p.name)}</div>
+        <div class="product-admin-name">${esc(p.name)}${p.published === false ? ' <span style="color:#fca5a5;font-size:10px">(hidden)</span>' : ''}${(p.images||[]).length > 1 ? ` <span style="color:#9ca3af;font-size:10px">📷${p.images.length}</span>` : ''}</div>
         <div class="product-admin-price">₹${inr(p.price)} <span style="color:#9ca3af;font-size:11px;font-weight:600">• ${p.stock != null && p.stock < TRACK_LIMIT ? p.stock + ' in stock' : 'unlimited'}</span></div>
         <div style="display:flex;gap:6px">
           <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct('${esc(p.id)}')">✏️ Edit</button>

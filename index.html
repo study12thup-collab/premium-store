@@ -811,13 +811,14 @@ function renderCheckoutPreview() {
       <div class="order-preview">
         <div class="order-preview-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
         <div><div class="order-preview-name">${esc(item.name)}</div><div class="order-preview-price">₹${inr(item.price)} × ${item.qty}</div></div>
-      </div>`).join('') + (cart.length ? `<div class="form-card" style="margin-bottom:20px;padding:14px 18px">${summaryRows(total)}</div>` : '');
+      </div>`).join('') + (cart.length ? `<div class="form-card" style="margin-bottom:20px;padding:14px 18px">${summaryRows(total)}<div class="sum-row" id="cod-fee-row" style="display:none"><span>COD charges</span><span>₹${COD_FEE}</span></div><div class="sum-row" style="font-weight:800"><span>Total</span><span id="checkout-total">₹${inr(total)}</span></div></div>` : '');
   }
   document.getElementById('pay-amount').textContent = inr(total);
   updatePayUI();
 }
 
 const COD_LIMIT = 3000;
+const COD_FEE = 49;
 function payMethod() { const r = document.querySelector('input[name="pm"]:checked'); return r ? r.value : 'online'; }
 function updatePayUI() {
   const total = getTotal();
@@ -826,13 +827,17 @@ function updatePayUI() {
   const onlineInput = document.querySelector('input[name="pm"][value="online"]');
   if (!codInput) return;
   codInput.disabled = !codOk;
-  document.getElementById('pm-cod-note').textContent = codOk ? 'Pay in cash when your order arrives' : `Available only for orders up to ₹${COD_LIMIT}`;
+  document.getElementById('pm-cod-note').textContent = codOk ? `Pay in cash on arrival • +₹${COD_FEE} COD charges` : `Available only for orders up to ₹${COD_LIMIT}`;
   if (!codOk && codInput.checked) onlineInput.checked = true;
   const m = payMethod();
   document.getElementById('pm-online-lbl').classList.toggle('on', m === 'online');
   document.getElementById('pm-cod-lbl').classList.toggle('on', m === 'cod');
+  const feeEl = document.getElementById('cod-fee-row');
+  if (feeEl) feeEl.style.display = m === 'cod' ? 'flex' : 'none';
+  const totEl = document.getElementById('checkout-total');
+  if (totEl) totEl.textContent = '₹' + inr(total + (m === 'cod' ? COD_FEE : 0));
   const btn = document.getElementById('pay-btn');
-  if (btn && !btn.disabled) btn.innerHTML = m === 'cod' ? `✅ Place Order — Pay ₹<span id="pay-amount">${inr(total)}</span> on Delivery` : `🔒 Pay ₹<span id="pay-amount">${inr(total)}</span>`;
+  if (btn && !btn.disabled) btn.innerHTML = m === 'cod' ? `✅ Place Order — Pay ₹<span id="pay-amount">${inr(total + COD_FEE)}</span> on Delivery` : `🔒 Pay ₹<span id="pay-amount">${inr(total)}</span>`;
 }
 
 async function placeOrder() {
@@ -928,8 +933,10 @@ async function placeOrder() {
   resetBtn();
 }
 
-function itemsHtml(items) {
-  return (items || []).map(i => `<div class="c-row"><span class="c-label">${esc(i.name)} × ${i.quantity || 1}</span><span class="c-val">₹${inr((i.price || 0) * (i.quantity || 1))}</span></div>`).join('');
+function itemsHtml(items, amount) {
+  const sub = (items || []).reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0);
+  const fee = amount != null ? Math.round((Number(amount) - sub) * 100) / 100 : 0;
+  return (items || []).map(i => `<div class="c-row"><span class="c-label">${esc(i.name)} × ${i.quantity || 1}</span><span class="c-val">₹${inr((i.price || 0) * (i.quantity || 1))}</span></div>`).join('') + (fee > 0.5 ? `<div class="c-row"><span class="c-label">COD charges</span><span class="c-val">₹${inr(fee)}</span></div>` : '');
 }
 
 function showConfirmation(order) {
@@ -944,7 +951,7 @@ function showConfirmation(order) {
     <div class="c-row"><span class="c-label">Name</span><span class="c-val">${esc(order.customer_name)}</span></div>
     <div class="c-row"><span class="c-label">Email</span><span class="c-val">${esc(order.customer_email)}</span></div>
     <div class="c-row"><span class="c-label">Ship to</span><span class="c-val" style="text-align:right;max-width:60%">${esc(order.customer_address)}, ${esc(order.customer_city)}, ${esc(order.customer_state)} - ${esc(order.customer_pincode)}</span></div>
-    ${itemsHtml(order.items)}
+    ${itemsHtml(order.items, order.amount)}
     <div class="c-row"><span class="c-label">Delivery</span><span class="c-val free">FREE</span></div>
     <div class="c-row"><span class="c-label">${isCod ? 'Pay on Delivery (Cash)' : 'Total Paid'}</span><span class="c-val" style="color:var(--primary)">₹${inr(order.amount)}</span></div>
     <p style="margin-top:12px;font-size:12px;color:var(--gray)">Save your Order ID — use "Track Order" at the top to check status anytime.</p>`;
@@ -1009,7 +1016,7 @@ function trackCard(o) {
     <p style="font-size:12px;color:var(--gray);margin-bottom:10px">${esc(o.customer_city || '')}${o.customer_city ? ', ' : ''}${esc(o.customer_state || '')} • ₹${inr(o.amount)} • ${o.created_at ? new Date(o.created_at + 'Z').toLocaleDateString('en-IN') : ''}</p>
     ${TRACK_STEPS.map((s, i) => `<div class="track-step ${i <= idx ? 'done' : ''}"><div class="track-dot">${i <= idx ? '✓' : ''}</div>${s}</div>`).join('')}
     ${o.tracking_info ? `<div class="track-note">🚚 ${esc(o.tracking_info)}</div>` : ''}
-    <div style="margin-top:10px;border-top:1px solid #f3f4f6;padding-top:8px">${itemsHtml(o.items)}</div>
+    <div style="margin-top:10px;border-top:1px solid #f3f4f6;padding-top:8px">${itemsHtml(o.items, o.amount)}</div>
   </div>`;
 }
 
@@ -1140,7 +1147,7 @@ function viewOrder(orderId) {
     row('Email', esc(o.customer_email || '-')) +
     row('Phone', esc(o.customer_phone || '-')) +
     row('Ship To', `${esc(o.customer_address || '-')}<br>${esc(o.customer_city || '')}, ${esc(o.customer_state || '')} - ${esc(o.customer_pincode || '')}`) +
-    row('Items', (o.items || []).map(i => `${esc(i.name)} × ${i.quantity || 1} — ₹${inr((i.price || 0) * (i.quantity || 1))}`).join('<br>') || '-') +
+    row('Items', ((o.items || []).map(i => `${esc(i.name)} × ${i.quantity || 1} — ₹${inr((i.price || 0) * (i.quantity || 1))}`).join('<br>') || '-') + (o.payment_status === 'cod' ? (() => { const f = Number(o.amount || 0) - (o.items || []).reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0); return f > 0.5 ? `<br>COD charges — ₹${inr(f)}` : ''; })() : '')) +
     row('Amount', '₹' + inr(o.amount), 'style="color:#8b5cf6;font-size:18px"') +
     row('Payment', statusBadge(o.payment_status) + (o.payment_status === 'cod' ? ` &nbsp;Collect ₹${inr(o.amount)} cash on delivery` : '')) +
     (isConfirmed(o) ? `<div class="m-row"><div class="m-label">Update Order</div>

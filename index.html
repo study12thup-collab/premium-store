@@ -862,7 +862,7 @@ async function placeOrder() {
     });
     const cfData = await cfRes.json();
     if (cfData.paymentSessionId && window.Cashfree) {
-      try { sessionStorage.setItem('pendingOrder', JSON.stringify({ orderId })); } catch (e) {}
+      try { sessionStorage.setItem('pendingOrder', JSON.stringify({ order_id: orderId, customer_name: name, customer_email: email, customer_phone: phone, customer_address: address, customer_city: city, customer_state: state, customer_pincode: pincode, amount: cfData.amount != null ? cfData.amount : total, items })); } catch (e) {}
       const cf = window.Cashfree({ mode: 'production' });
       cf.checkout({ paymentSessionId: cfData.paymentSessionId, redirectTarget: '_self' });
       return;
@@ -896,7 +896,6 @@ function showConfirmation(order) {
   showPage('confirmation');
 }
 
-function deductStock(order) { sb.rpc('decrement_stock', { p_order_id: order.order_id }); }
 
 async function checkPaymentReturn() {
   const params = new URLSearchParams(window.location.search);
@@ -904,28 +903,24 @@ async function checkPaymentReturn() {
     const orderId = params.get('order');
     window.history.replaceState({}, '', window.location.pathname);
     try {
-      const paymentData = await sb.get('digital_payments', `order_id=eq.${encodeURIComponent(orderId)}`);
-      const paymentRecord = Array.isArray(paymentData) ? paymentData[0] : null;
-      if (!paymentRecord || !paymentRecord.cashfree_order_id) { showPaymentFailed(orderId, 'Could not find payment record.'); return; }
-
-      // Real verification: backend asks Cashfree directly
+      // Real verification: backend asks Cashfree directly and only then marks the order paid
       const verifyRes = await fetch(`${API_URL}/api/orders/verify`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, cfOrderId: paymentRecord.cashfree_order_id })
+        body: JSON.stringify({ orderId })
       });
       const verifyData = await verifyRes.json();
       if (!verifyData.success) { showPaymentFailed(orderId, 'Payment was not completed. If money was deducted, Cashfree will refund it automatically within a few days.'); return; }
 
-      const orderData = await sb.get('digital_orders', `order_id=eq.${encodeURIComponent(orderId)}`);
-      const order = Array.isArray(orderData) ? orderData[0] : null;
+      let order = null;
+      try { const p = JSON.parse(sessionStorage.getItem('pendingOrder') || 'null'); if (p && p.order_id === orderId) order = p; } catch (e) {}
       cart = []; saveCart();
+      try { sessionStorage.removeItem('pendingOrder'); } catch (e) {}
       if (!order) {
-        document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Payment Successful!</h1><p>Please save your Order ID: ${esc(orderId)}</p>`;
+        document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Payment Successful!</h1><p>Your order is confirmed. Please save your Order ID: ${esc(orderId)}</p>`;
         document.getElementById('confirm-details').innerHTML = '';
         showPage('confirmation');
         return;
       }
-      deductStock(order);
       showConfirmation(order);
     } catch (e) {
       console.error('Payment return error:', e);
@@ -975,7 +970,8 @@ async function trackOrder() {
 
   btn.textContent = '⏳ Searching...'; btn.disabled = true;
   try {
-    let rows = await sb.get('digital_orders', `customer_email=ilike.${encodeURIComponent(email)}`);
+    let rows = await sb.rpc('get_orders_by_email', { p_email: email });
+    if (!Array.isArray(rows)) rows = await sb.get('digital_orders', `customer_email=ilike.${encodeURIComponent(email)}`);
     rows = Array.isArray(rows) ? rows.filter(o => (o.customer_email || '').toLowerCase() === email) : [];
     if (orderId) rows = rows.filter(o => (o.order_id || '').toLowerCase() === orderId.toLowerCase());
     if (rows.length === 0) return fail('❌ No order found for this email' + (orderId ? ' and Order ID' : '') + '.');
@@ -996,7 +992,8 @@ async function adminLogin() {
 }
 
 async function loadAdmin() {
-  const o = await sb.get('digital_orders');
+  let o = await sb.rpc('admin_list_orders', { p_password: adminPw });
+  if (!Array.isArray(o)) o = await sb.get('digital_orders');
   orders = Array.isArray(o) ? o : [];
   const ap = await sb.rpc('admin_list_products', { p_password: adminPw });
   if (Array.isArray(ap)) products = ap;

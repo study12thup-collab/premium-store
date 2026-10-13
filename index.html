@@ -451,6 +451,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     <div class="confirm-success" id="confirm-banner"></div>
     <div class="confirm-card" id="confirm-details"></div>
     <div class="confirm-btns">
+      <button class="home-btn" id="track-btn" style="display:none" onclick="showPage('track')">📦 Track This Order</button>
       <button class="home-btn" onclick="showPage('home')">🏠 Continue Shopping</button>
     </div>
   </div>
@@ -878,6 +879,9 @@ function itemsHtml(items) {
 }
 
 function showConfirmation(order) {
+  document.getElementById('lookup-order').value = order.order_id || '';
+  document.getElementById('lookup-email').value = order.customer_email || '';
+  document.getElementById('track-btn').style.display = 'block';
   document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Order Confirmed!</h1><p>Thank you for shopping with us. We'll ship your order soon — delivery in 3–7 business days.</p>`;
   document.getElementById('confirm-details').innerHTML = `
     <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
@@ -948,7 +952,7 @@ function trackIndex(o) {
 }
 
 async function trackOrder() {
-  const orderId = document.getElementById('lookup-order').value.trim();
+  const orderId = document.getElementById('lookup-order').value.trim().toUpperCase();
   const email = document.getElementById('lookup-email').value.trim().toLowerCase();
   const errBox = document.getElementById('lookup-err');
   const resultsEl = document.getElementById('lookup-results');

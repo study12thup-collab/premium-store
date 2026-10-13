@@ -299,6 +299,11 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 .img-item .mk{display:block;width:100%;margin-top:4px;background:#3d3d5c;color:#fff;font-size:10px;padding:3px;border-radius:6px}
 .img-item.main .mk{background:#059669}
 .track-note{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+.pm-opt{display:flex;align-items:center;gap:10px;border:1.5px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;font-size:14px;font-weight:700;background:#fff}
+.pm-opt input{width:auto;accent-color:#6d28d9}
+.pm-opt.on{border-color:var(--primary);background:#faf5ff}
+.pm-opt small{display:block;font-weight:500;color:var(--gray);font-size:12px}
+.s-cod{background:#78350f;color:#fcd34d}
 .empty-shop{grid-column:1/-1;text-align:center;color:var(--gray);padding:40px 10px}
 </style>
 </head>
@@ -339,6 +344,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
       <div class="trust-row">
         <div class="trust-item">🚚 Free Delivery</div>
         <div class="trust-item">🔒 Secure Payment</div>
+        <div class="trust-item">💵 Cash on Delivery</div>
         <div class="trust-item">↩️ 7-Day Easy Returns</div>
       </div>
     </div>
@@ -438,6 +444,10 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
         <div class="form-group"><label>State <span class="req">*</span></label><input type="text" id="c-state" placeholder="State"/></div>
       </div>
       <div class="form-group"><label>Pincode <span class="req">*</span></label><input type="tel" id="c-pincode" placeholder="6 digit pincode" maxlength="6"/></div>
+      <div class="form-group" id="pm-wrap"><label>Payment Method</label>
+        <label class="pm-opt on" id="pm-online-lbl"><input type="radio" name="pm" value="online" checked onchange="updatePayUI()"/><span>💳 Pay Online<small>UPI, Cards, Net Banking, Wallets</small></span></label>
+        <label class="pm-opt" id="pm-cod-lbl"><input type="radio" name="pm" value="cod" onchange="updatePayUI()"/><span>💵 Cash on Delivery<small id="pm-cod-note">Pay in cash when your order arrives</small></span></label>
+      </div>
       <button class="pay-btn" onclick="placeOrder()" id="pay-btn">🔒 Pay ₹<span id="pay-amount">0</span></button>
       <div class="secure-note">🔒 Secured by Cashfree Payments</div>
       <div class="secure-note" style="margin-top:6px">🚚 Free delivery • ↩️ 7-day easy returns</div>
@@ -512,7 +522,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
         </div>
       </div>
       <div id="admin-orders" style="display:none">
-        <div style="display:flex;gap:10px;margin-bottom:0"><input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders()"/><select class="status-select" id="order-filter" onchange="searchOrders()" style="margin-bottom:16px;height:42px"><option value="paid">Paid orders</option><option value="pending">Unpaid / not completed</option><option value="">All</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div>
+        <div style="display:flex;gap:10px;margin-bottom:0"><input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders()"/><select class="status-select" id="order-filter" onchange="searchOrders()" style="margin-bottom:16px;height:42px"><option value="paid">Confirmed (paid + COD)</option><option value="cod">COD orders</option><option value="pending">Unpaid / not completed</option><option value="">All</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div>
         <div class="admin-card">
           <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Amount</th><th>Payment</th><th>Status</th><th>Update</th><th>Action</th></tr></thead><tbody id="all-orders"></tbody></table></div>
         </div>
@@ -804,6 +814,25 @@ function renderCheckoutPreview() {
       </div>`).join('') + (cart.length ? `<div class="form-card" style="margin-bottom:20px;padding:14px 18px">${summaryRows(total)}</div>` : '');
   }
   document.getElementById('pay-amount').textContent = inr(total);
+  updatePayUI();
+}
+
+const COD_LIMIT = 3000;
+function payMethod() { const r = document.querySelector('input[name="pm"]:checked'); return r ? r.value : 'online'; }
+function updatePayUI() {
+  const total = getTotal();
+  const codOk = total <= COD_LIMIT;
+  const codInput = document.querySelector('input[name="pm"][value="cod"]');
+  const onlineInput = document.querySelector('input[name="pm"][value="online"]');
+  if (!codInput) return;
+  codInput.disabled = !codOk;
+  document.getElementById('pm-cod-note').textContent = codOk ? 'Pay in cash when your order arrives' : `Available only for orders up to ₹${COD_LIMIT}`;
+  if (!codOk && codInput.checked) onlineInput.checked = true;
+  const m = payMethod();
+  document.getElementById('pm-online-lbl').classList.toggle('on', m === 'online');
+  document.getElementById('pm-cod-lbl').classList.toggle('on', m === 'cod');
+  const btn = document.getElementById('pay-btn');
+  if (btn && !btn.disabled) btn.innerHTML = m === 'cod' ? `✅ Place Order — Pay ₹<span id="pay-amount">${inr(total)}</span> on Delivery` : `🔒 Pay ₹<span id="pay-amount">${inr(total)}</span>`;
 }
 
 async function placeOrder() {
@@ -825,7 +854,7 @@ async function placeOrder() {
   if (cart.length === 0) return showErr('Cart is empty');
 
   payBtn.disabled = true;
-  const resetBtn = () => { payBtn.disabled = false; payBtn.innerHTML = `🔒 Pay ₹<span id="pay-amount">${inr(getTotal())}</span>`; };
+  const resetBtn = () => { payBtn.disabled = false; updatePayUI(); };
   payBtn.textContent = '⏳ Checking stock...';
 
   // Re-check latest prices/stock from the database
@@ -843,6 +872,29 @@ async function placeOrder() {
   } catch (e) { /* proceed with cart values */ }
 
   payBtn.textContent = '⏳ Processing...';
+  if (payMethod() === 'cod') {
+    try {
+      const res = await fetch(`${API_URL}/api/orders/cod`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart.map(i => ({ productId: String(i.id), quantity: i.qty })),
+          customer: { name, phone, email, address, city, state, pincode },
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        cart = []; saveCart();
+        showConfirmation({ order_id: data.orderId, customer_name: name, customer_email: email, customer_phone: phone, customer_address: address, customer_city: city, customer_state: state, customer_pincode: pincode, amount: data.amount, items: data.items, payment_method: 'cod' });
+        resetBtn();
+        return;
+      }
+      showErr(data.error || 'Could not place the order. Please try again.');
+    } catch (e) {
+      showErr('Could not connect to the server (' + e.message + '). Your cart is safe — please try again.');
+    }
+    resetBtn();
+    return;
+  }
   const total = getTotal();
   const orderId = 'ORD-' + Date.now().toString(36).toUpperCase();
   const items = cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.qty }));
@@ -884,7 +936,8 @@ function showConfirmation(order) {
   document.getElementById('lookup-order').value = order.order_id || '';
   document.getElementById('lookup-email').value = order.customer_email || '';
   document.getElementById('track-btn').style.display = 'block';
-  document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Order Confirmed!</h1><p>Thank you for shopping with us. We'll ship your order soon — delivery in 3–7 business days.</p>`;
+  const isCod = order.payment_method === 'cod';
+  document.getElementById('confirm-banner').innerHTML = `<div class="icon">✅</div><h1>Order Confirmed!</h1><p>Thank you for shopping with us. We'll ship your order soon — delivery in 3–7 business days.${isCod ? ' Please keep the exact amount ready to pay on delivery.' : ''}</p>`;
   document.getElementById('confirm-details').innerHTML = `
     <h2 style="font-size:16px;font-weight:800;margin-bottom:14px">📋 Order Details</h2>
     <div class="c-row"><span class="c-label">Order ID</span><span class="c-val purple">${esc(order.order_id)}</span></div>
@@ -893,7 +946,7 @@ function showConfirmation(order) {
     <div class="c-row"><span class="c-label">Ship to</span><span class="c-val" style="text-align:right;max-width:60%">${esc(order.customer_address)}, ${esc(order.customer_city)}, ${esc(order.customer_state)} - ${esc(order.customer_pincode)}</span></div>
     ${itemsHtml(order.items)}
     <div class="c-row"><span class="c-label">Delivery</span><span class="c-val free">FREE</span></div>
-    <div class="c-row"><span class="c-label">Total Paid</span><span class="c-val" style="color:var(--primary)">₹${inr(order.amount)}</span></div>
+    <div class="c-row"><span class="c-label">${isCod ? 'Pay on Delivery (Cash)' : 'Total Paid'}</span><span class="c-val" style="color:var(--primary)">₹${inr(order.amount)}</span></div>
     <p style="margin-top:12px;font-size:12px;color:var(--gray)">Save your Order ID — use "Track Order" at the top to check status anytime.</p>`;
   showPage('confirmation');
 }
@@ -977,7 +1030,7 @@ async function trackOrder() {
     rows = Array.isArray(rows) ? rows.filter(o => (o.customer_email || '').toLowerCase() === email) : [];
     if (orderId) rows = rows.filter(o => (o.order_id || '').toLowerCase() === orderId.toLowerCase());
     if (rows.length === 0) return fail('❌ No order found for this email' + (orderId ? ' and Order ID' : '') + '.');
-    const paid = rows.filter(o => o.payment_status === 'paid');
+    const paid = rows.filter(o => o.payment_status === 'paid' || o.payment_status === 'cod');
     if (paid.length === 0) return fail('⚠️ Payment for this order has not been completed.');
     resultsEl.innerHTML = paid.map(trackCard).join('');
   } catch (e) { fail('❌ Something went wrong. Try again.'); }
@@ -1002,36 +1055,38 @@ async function loadAdmin() {
   renderStats(); renderRecentOrders(); searchOrders(); renderAdminProducts();
 }
 
-const paidOrders = () => orders.filter(o => o.payment_status === 'paid');
+const isConfirmed = o => o.payment_status === 'paid' || o.payment_status === 'cod';
+const paidOrders = () => orders.filter(isConfirmed); // confirmed = paid online or placed as COD
+const revenueOrders = () => orders.filter(o => o.payment_status === 'paid' || (o.payment_status === 'cod' && o.order_status === 'delivered'));
 
 function renderStats() {
   const today = new Date().toISOString().split('T')[0];
   const paid = paidOrders();
   document.getElementById('s-total').textContent = paid.length;
   document.getElementById('s-today').textContent = paid.filter(o => o.created_at && o.created_at.startsWith(today)).length;
-  document.getElementById('s-sales').textContent = '₹' + inr(paid.reduce((s, o) => s + Number(o.amount || 0), 0));
+  document.getElementById('s-sales').textContent = '₹' + inr(revenueOrders().reduce((s, o) => s + Number(o.amount || 0), 0));
   document.getElementById('s-pending').textContent = paid.filter(o => !['shipped', 'delivered', 'cancelled'].includes(o.order_status)).length;
 }
 
 function statusBadge(s) {
-  const cls = { pending: 's-pending', paid: 's-paid', processing: 's-processing', shipped: 's-shipped', delivered: 's-delivered', cancelled: 's-cancelled', failed: 's-cancelled' }[s] || 's-pending';
+  const cls = { pending: 's-pending', cod: 's-cod', paid: 's-paid', processing: 's-processing', shipped: 's-shipped', delivered: 's-delivered', cancelled: 's-cancelled', failed: 's-cancelled' }[s] || 's-pending';
   return `<span class="status-badge ${cls}">${esc((s || 'pending').toUpperCase())}</span>`;
 }
 
 function renderRecentOrders() {
   const el = document.getElementById('recent-orders');
   if (!el) return;
-  el.innerHTML = paidOrders().slice(0, 5).map(o => `<tr><td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:20px">No paid orders yet</td></tr>';
+  el.innerHTML = paidOrders().slice(0, 5).map(o => `<tr><td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:20px">No confirmed orders yet</td></tr>';
 }
 
-function renderAllOrders(filtered = orders.filter(o => o.payment_status === 'paid')) {
+function renderAllOrders(filtered = orders.filter(isConfirmed)) {
   const el = document.getElementById('all-orders');
   if (!el) return;
   el.innerHTML = filtered.map(o => `
     <tr>
       <td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>${esc(o.customer_city || '-')}</td>
       <td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td>
-      <td>${o.payment_status === 'paid' ? `<select class="status-select" onchange="updateOrderStatus('${esc(o.order_id)}', this.value)">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : '<span style="color:#9ca3af;font-size:11px">awaiting payment</span>'}</td>
+      <td>${isConfirmed(o) ? `<select class="status-select" onchange="updateOrderStatus('${esc(o.order_id)}', this.value)">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : '<span style="color:#9ca3af;font-size:11px">awaiting payment</span>'}</td>
       <td><button class="view-btn" onclick="viewOrder('${esc(o.order_id)}')">View</button></td>
     </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
 }
@@ -1041,9 +1096,10 @@ function searchOrders() {
   const f = document.getElementById('order-filter').value;
   renderAllOrders(orders.filter(o => {
     if (q && !((o.order_id || '').toLowerCase().includes(q) || (o.customer_name || '').toLowerCase().includes(q))) return false;
-    if (f === 'paid') return o.payment_status === 'paid';
-    if (f === 'pending') return o.payment_status !== 'paid';
-    if (f) return o.order_status === f && o.payment_status === 'paid';
+    if (f === 'paid') return isConfirmed(o);
+    if (f === 'cod') return o.payment_status === 'cod';
+    if (f === 'pending') return !isConfirmed(o);
+    if (f) return o.order_status === f && isConfirmed(o);
     return true;
   }));
 }
@@ -1086,8 +1142,8 @@ function viewOrder(orderId) {
     row('Ship To', `${esc(o.customer_address || '-')}<br>${esc(o.customer_city || '')}, ${esc(o.customer_state || '')} - ${esc(o.customer_pincode || '')}`) +
     row('Items', (o.items || []).map(i => `${esc(i.name)} × ${i.quantity || 1} — ₹${inr((i.price || 0) * (i.quantity || 1))}`).join('<br>') || '-') +
     row('Amount', '₹' + inr(o.amount), 'style="color:#8b5cf6;font-size:18px"') +
-    row('Payment', statusBadge(o.payment_status)) +
-    (o.payment_status === 'paid' ? `<div class="m-row"><div class="m-label">Update Order</div>
+    row('Payment', statusBadge(o.payment_status) + (o.payment_status === 'cod' ? ` &nbsp;Collect ₹${inr(o.amount)} cash on delivery` : '')) +
+    (isConfirmed(o) ? `<div class="m-row"><div class="m-label">Update Order</div>
       <select id="m-status" class="status-select" style="width:100%;margin-bottom:8px">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
       <input id="m-tracking" class="admin-search" style="margin-bottom:8px" placeholder="Courier / tracking number (customer can see this)" value="${esc(o.tracking_info || '')}"/>
       <button class="save-btn" onclick="saveOrderFromModal('${esc(o.order_id)}')">💾 Save</button></div>` : row('Order Status', statusBadge(o.order_status)) + '<div class="m-row" style="color:#fca5a5;font-size:12px">Payment not completed — do not ship.</div><button class="cancel-btn" style="margin:0" onclick="markPaid(\'' + esc(o.order_id) + '\')">Mark as paid (only if money received in Cashfree)</button>') +
@@ -1230,8 +1286,8 @@ function renderAdminProducts() {
 }
 
 function renderAnalytics() {
-  const paid = paidOrders();
-  const conv = orders.length ? Math.round((paid.length / orders.length) * 100) : 0;
+  const paid = revenueOrders();
+  const conv = orders.length ? Math.round((paidOrders().length / orders.length) * 100) : 0;
   const totalRev = paid.reduce((s, o) => s + Number(o.amount || 0), 0);
   const aov = paid.length ? Math.round(totalRev / paid.length) : 0;
   const now = new Date();

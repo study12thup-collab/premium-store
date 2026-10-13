@@ -1127,7 +1127,7 @@ async function uploadImages(input) {
     try {
       const f = files[n];
       const res = await fetch(`${API_URL}/api/admin/upload-image`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPw },
         body: JSON.stringify({ fileBase64: await fileToBase64(f), fileName: f.name, productId: editingProductId || 'new' })
       });
       const data = await res.json();

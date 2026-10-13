@@ -510,7 +510,7 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
         </div>
       </div>
       <div id="admin-orders" style="display:none">
-        <div style="display:flex;gap:10px;margin-bottom:0"><input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders()"/><select class="status-select" id="order-filter" onchange="searchOrders()" style="margin-bottom:16px;height:42px"><option value="">All</option><option value="paid">Paid</option><option value="pending">Unpaid</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div>
+        <div style="display:flex;gap:10px;margin-bottom:0"><input class="admin-search" id="order-search" placeholder="Search by order ID or name..." oninput="searchOrders()"/><select class="status-select" id="order-filter" onchange="searchOrders()" style="margin-bottom:16px;height:42px"><option value="paid">Paid orders</option><option value="pending">Unpaid / not completed</option><option value="">All</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></div>
         <div class="admin-card">
           <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Amount</th><th>Payment</th><th>Status</th><th>Update</th><th>Action</th></tr></thead><tbody id="all-orders"></tbody></table></div>
         </div>
@@ -990,7 +990,7 @@ async function loadAdmin() {
   orders = Array.isArray(o) ? o : [];
   const ap = await sb.rpc('admin_list_products', { p_password: adminPw });
   if (Array.isArray(ap)) products = ap;
-  renderStats(); renderRecentOrders(); renderAllOrders(); renderAdminProducts();
+  renderStats(); renderRecentOrders(); searchOrders(); renderAdminProducts();
 }
 
 const paidOrders = () => orders.filter(o => o.payment_status === 'paid');
@@ -1012,17 +1012,17 @@ function statusBadge(s) {
 function renderRecentOrders() {
   const el = document.getElementById('recent-orders');
   if (!el) return;
-  el.innerHTML = orders.slice(0, 5).map(o => `<tr><td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
+  el.innerHTML = paidOrders().slice(0, 5).map(o => `<tr><td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:20px">No paid orders yet</td></tr>';
 }
 
-function renderAllOrders(filtered = orders) {
+function renderAllOrders(filtered = orders.filter(o => o.payment_status === 'paid')) {
   const el = document.getElementById('all-orders');
   if (!el) return;
   el.innerHTML = filtered.map(o => `
     <tr>
       <td class="order-id-cell">${esc(o.order_id)}</td><td>${esc(o.customer_name || '-')}</td><td>${esc(o.customer_city || '-')}</td>
       <td>₹${inr(o.amount)}</td><td>${statusBadge(o.payment_status)}</td><td>${statusBadge(o.order_status)}</td>
-      <td><select class="status-select" onchange="updateOrderStatus('${esc(o.order_id)}', this.value)">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+      <td>${o.payment_status === 'paid' ? `<select class="status-select" onchange="updateOrderStatus('${esc(o.order_id)}', this.value)">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : '<span style="color:#9ca3af;font-size:11px">awaiting payment</span>'}</td>
       <td><button class="view-btn" onclick="viewOrder('${esc(o.order_id)}')">View</button></td>
     </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:20px">No orders yet</td></tr>';
 }
@@ -1050,6 +1050,15 @@ async function updateOrderStatus(orderId, status, tracking) {
   return true;
 }
 
+async function markPaid(orderId) {
+  if (!confirm('Confirm: payment for ' + orderId + ' is visible as SUCCESS in your Cashfree dashboard?')) return;
+  const ok = await sb.rpc('admin_mark_paid', { p_password: adminPw, p_order_id: orderId });
+  if (ok !== true) { toast('❌ Failed'); return; }
+  const o = orders.find(x => x.order_id === orderId);
+  if (o) o.payment_status = 'paid';
+  closeModal(); renderStats(); renderRecentOrders(); searchOrders(); toast('✅ Marked as paid');
+}
+
 async function saveOrderFromModal(orderId) {
   const status = document.getElementById('m-status').value;
   const tracking = document.getElementById('m-tracking').value.trim();
@@ -1072,7 +1081,7 @@ function viewOrder(orderId) {
     (o.payment_status === 'paid' ? `<div class="m-row"><div class="m-label">Update Order</div>
       <select id="m-status" class="status-select" style="width:100%;margin-bottom:8px">${['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map(s => `<option ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
       <input id="m-tracking" class="admin-search" style="margin-bottom:8px" placeholder="Courier / tracking number (customer can see this)" value="${esc(o.tracking_info || '')}"/>
-      <button class="save-btn" onclick="saveOrderFromModal('${esc(o.order_id)}')">💾 Save</button></div>` : row('Order Status', statusBadge(o.order_status)) + '<div class="m-row" style="color:#fca5a5;font-size:12px">Payment not completed — do not ship.</div>') +
+      <button class="save-btn" onclick="saveOrderFromModal('${esc(o.order_id)}')">💾 Save</button></div>` : row('Order Status', statusBadge(o.order_status)) + '<div class="m-row" style="color:#fca5a5;font-size:12px">Payment not completed — do not ship.</div><button class="cancel-btn" style="margin:0" onclick="markPaid(\'' + esc(o.order_id) + '\')">Mark as paid (only if money received in Cashfree)</button>') +
     row('Date', o.created_at ? new Date(o.created_at).toLocaleString('en-IN') : '-');
   document.getElementById('modal').style.display = 'flex';
 }

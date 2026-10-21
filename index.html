@@ -32,7 +32,14 @@ img{max-width:100%}
 
 /* HEADER */
 .topbar{background:linear-gradient(90deg,var(--primary-dark),var(--primary));color:#fff;text-align:center;padding:9px;font-size:13px;font-weight:600}
-header{background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.04)}
+header{background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.site-head{position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.06);background:#fff}
+.top-search{display:none;padding:0 16px 12px;background:#fff}
+body.on-home .top-search{display:block}
+.top-search .wrap{position:relative;max-width:700px;margin:0 auto}
+.top-search input{width:100%;padding:12px 14px 12px 42px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:#f9fafb}
+.top-search input:focus{border-color:var(--primary);background:#fff}
+.top-search .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
 .logo{font-size:21px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:8px}
 .header-right{display:flex;align-items:center;gap:8px}
 @media(max-width:430px){
@@ -356,6 +363,7 @@ body.admin-mode .wa-float{display:none}
 
 <!-- HEADER -->
 <div class="topbar">🚚 Free Delivery on All Orders — Pay Securely Online</div>
+<div class="site-head">
 <header>
   <div class="logo">🛍️ Premium Store</div>
   <div class="header-right">
@@ -363,6 +371,8 @@ body.admin-mode .wa-float{display:none}
     <button class="cart-btn" onclick="showPage('cart')">🛒 Cart<span class="cart-badge" id="cartBadge">0</span></button>
   </div>
 </header>
+<div class="top-search"><div class="wrap"><span class="ic">🔍</span><input id="search-q" type="search" placeholder="Search for products" autocomplete="off" oninput="onSearch(this.value)" onkeydown="if(event.key==='Enter'){this.blur();goProducts()}"/></div></div>
+</div>
 
 <!-- ===== HOME ===== -->
 <div class="page active" id="page-home">
@@ -390,8 +400,7 @@ body.admin-mode .wa-float{display:none}
       <div class="section-title">🛍️ Our Products</div>
       <div class="section-sub">Free delivery on every order</div>
     </div>
-    <div class="toolbar">
-      <input class="search-box" id="search-q" placeholder="🔍 Search products..." oninput="searchQ=this.value;renderGrid()"/>
+    <div class="toolbar" style="justify-content:flex-end">
       <select class="sort-box" id="sort-by" onchange="sortBy=this.value;renderGrid()"><option value="new">Newest</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="disc">Biggest Discount</option></select>
     </div>
     <div class="chips" id="chips"></div>
@@ -659,6 +668,7 @@ async function loadProducts() {
 }
 
 async function init() {
+  document.body.classList.add('on-home');
   // show last-known products instantly, then refresh from the server
   try { const c = JSON.parse(localStorage.getItem('es_products') || 'null'); if (Array.isArray(c) && c.length) { products = c; renderGrid(); } } catch (e) {}
   await loadProducts();
@@ -675,6 +685,7 @@ function showPage(p) {
   document.getElementById('page-' + p).classList.add('active');
   window.scrollTo(0, 0);
   document.body.classList.toggle('admin-mode', p === 'admin' || p === 'admin-login');
+  document.body.classList.toggle('on-home', p === 'home');
   if (p === 'cart') renderCart();
   if (p === 'checkout') renderCheckoutPreview();
   if (p === 'admin') loadAdmin();
@@ -756,6 +767,8 @@ function productCard(p, idx) {
 }
 
 let searchQ = '', sortBy = 'new', filterCat = '';
+function goProducts() { const s = document.getElementById('products-section'); if (s) window.scrollTo({ top: s.getBoundingClientRect().top + window.scrollY - 130, behavior: 'smooth' }); }
+function onSearch(v) { const first = !searchQ && v; searchQ = v; renderGrid(); if (first) goProducts(); }
 function renderGrid() {
   const g = document.getElementById('grid-products');
   if (!g) return;

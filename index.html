@@ -4,7 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Premium Store — Shop Online</title>
-<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+<link rel="preconnect" href="https://vjcyrkbjrfynjybovuce.supabase.co" crossorigin/>
+<link rel="dns-prefetch" href="https://sdk.cashfree.com"/>
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -614,10 +616,13 @@ async function loadProducts() {
   try {
     const data = await sb.get('digital_products', 'published=eq.true');
     products = Array.isArray(data) ? data : [];
+    try { localStorage.setItem('es_products', JSON.stringify(products)); } catch (e) {}
   } catch (e) { products = []; }
 }
 
 async function init() {
+  // show last-known products instantly, then refresh from the server
+  try { const c = JSON.parse(localStorage.getItem('es_products') || 'null'); if (Array.isArray(c) && c.length) { products = c; renderGrid(); } } catch (e) {}
   await loadProducts();
   renderGrid();
   updateCartUI();
@@ -699,7 +704,7 @@ function productCard(p, idx) {
   const disc = p.discount || 0;
   const orig = p.original_price || p.price;
   const out = isOut(p);
-  const img = (p.images && p.images[0]) ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}" onerror="this.style.display='none'"/>` : '📦';
+  const img = (p.images && p.images[0]) ? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}" loading="lazy" decoding="async" onerror="this.style.display='none'"/>` : '📦';
   return `<div class="pcard" style="animation-delay:${(idx||0)*0.08}s" onclick="openProduct('${esc(p.id)}')">
     <div class="pcard-img">${img}${p.product_type ? `<span class="type-badge">${esc(p.product_type)}</span>` : ''}${disc > 0 ? `<span class="disc-badge">-${disc}%</span>` : ''}</div>
     <div class="pcard-body">
@@ -727,7 +732,7 @@ function openProduct(id) {
   const save = orig - p.price;
   const out = isOut(p);
   const img = (p.images && p.images[0]) ? `<img id="detail-main" src="${esc(p.images[0])}" alt="${esc(p.name)}"/>` : '📦';
-  const thumbs = (p.images && p.images.length > 1) ? `<div class="thumbs">${p.images.map((u, i) => `<img src="${esc(u)}" class="${i === 0 ? 'on' : ''}" onclick="swapImg(this)"/>`).join('')}</div>` : '';
+  const thumbs = (p.images && p.images.length > 1) ? `<div class="thumbs">${p.images.map((u, i) => `<img src="${esc(u)}" loading="lazy" decoding="async" class="${i === 0 ? 'on' : ''}" onclick="swapImg(this)"/>`).join('')}</div>` : '';
   document.getElementById('detail-content').innerHTML = `
     <div><div class="detail-img">${img}</div>${thumbs}</div>
     <div class="detail-info">
@@ -788,7 +793,7 @@ function renderCart() {
   const total = getTotal();
   el.innerHTML = cart.map(item => `
     <div class="cart-item">
-      <div class="cart-item-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
+      <div class="cart-item-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" loading="lazy" decoding="async" onerror="this.style.display='none'"/>` : '📦'}</div>
       <div>
         <div class="cart-item-name">${esc(item.name)}</div>
         <div class="cart-item-price">₹${inr(item.price * item.qty)}</div>
@@ -809,7 +814,7 @@ function renderCheckoutPreview() {
   if (el) {
     el.innerHTML = cart.map(item => `
       <div class="order-preview">
-        <div class="order-preview-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" onerror="this.style.display='none'"/>` : '📦'}</div>
+        <div class="order-preview-img">${item.images && item.images[0] ? `<img src="${esc(item.images[0])}" loading="lazy" decoding="async" onerror="this.style.display='none'"/>` : '📦'}</div>
         <div><div class="order-preview-name">${esc(item.name)}</div><div class="order-preview-price">₹${inr(item.price)} × ${item.qty}</div></div>
       </div>`).join('') + (cart.length ? `<div class="form-card" style="margin-bottom:20px;padding:14px 18px">${summaryRows(total)}<div class="sum-row" id="cod-fee-row" style="display:none"><span>COD charges</span><span>₹${COD_FEE}</span></div><div class="sum-row" style="font-weight:800"><span>Total</span><span id="checkout-total">₹${inr(total)}</span></div></div>` : '');
   }
@@ -1190,7 +1195,7 @@ async function uploadImages(input) {
       const f = files[n];
       const res = await fetch(`${API_URL}/api/admin/upload-image`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPw },
-        body: JSON.stringify({ fileBase64: await fileToBase64(f), fileName: f.name, productId: editingProductId || 'new' })
+        body: JSON.stringify({ ...(await compressImage(f)), productId: editingProductId || 'new' })
       });
       const data = await res.json();
       if (data.url) formImages.push(data.url);
@@ -1256,6 +1261,23 @@ async function saveProduct() {
   const ap = await sb.rpc('admin_list_products', { p_password: adminPw });
   if (Array.isArray(ap)) products = ap;
   renderGrid(); renderAdminProducts(); toggleProductForm(); resetProductForm();
+}
+
+// Resize big photos before upload (max 1200px, JPEG) so the store loads fast
+async function compressImage(file) {
+  try {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return { fileBase64: await fileToBase64(file), fileName: file.name };
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+    if (!blob || blob.size >= file.size) return { fileBase64: await fileToBase64(file), fileName: file.name };
+    return { fileBase64: await fileToBase64(blob), fileName: file.name.replace(/\.[^.]+$/, '') + '.jpg' };
+  } catch (e) { return { fileBase64: await fileToBase64(file), fileName: file.name }; }
 }
 
 function fileToBase64(file) {

@@ -4,6 +4,12 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Premium Store — Shop Online</title>
+<meta name="description" content="Quality products at great prices. Free delivery across India, secure online payment and Cash on Delivery."/>
+<meta name="theme-color" content="#6d28d9"/>
+<meta property="og:title" content="Premium Store — Shop Online"/>
+<meta property="og:description" content="Quality products at great prices. Free delivery, secure payment and Cash on Delivery."/>
+<meta property="og:type" content="website"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%8D%EF%B8%8F%3C/text%3E%3C/svg%3E"/>
 <link rel="preconnect" href="https://vjcyrkbjrfynjybovuce.supabase.co" crossorigin/>
 <link rel="dns-prefetch" href="https://sdk.cashfree.com"/>
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
@@ -29,10 +35,12 @@ img{max-width:100%}
 header{background:#fff;border-bottom:1px solid #eee;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.04)}
 .logo{font-size:21px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:8px}
 .header-right{display:flex;align-items:center;gap:8px}
-@media(max-width:400px){
-  .my-purchase-btn{padding:9px 10px;font-size:11px}
-  .cart-btn{padding:10px 14px;font-size:12px}
-  .logo{font-size:17px}
+@media(max-width:430px){
+  header{padding:12px 12px}
+  .header-right{gap:6px}
+  .my-purchase-btn{padding:9px 9px;font-size:11px;white-space:nowrap}
+  .cart-btn{padding:10px 11px;font-size:12px;white-space:nowrap}
+  .logo{font-size:15px;white-space:nowrap;gap:4px}
 }
 .nav-link{color:#374151;font-weight:600;font-size:14px}
 .cart-btn{background:var(--primary);color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:14px;position:relative}
@@ -306,6 +314,29 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
 .pm-opt.on{border-color:var(--primary);background:#faf5ff}
 .pm-opt small{display:block;font-weight:500;color:var(--gray);font-size:12px}
 .s-cod{background:#78350f;color:#fcd34d}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page.active{animation:pageIn .25s ease}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.search-box{flex:1;min-width:180px;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:#fff}
+.search-box:focus{border-color:var(--primary)}
+.sort-box{padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;font-family:inherit;background:#fff;font-weight:600}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{background:#fff;border:1.5px solid #e5e7eb;color:#374151;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;white-space:nowrap}
+.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.skel{background:#fff;border:1px solid #eee;border-radius:16px;overflow:hidden}
+.skel-img,.skel-line{background:linear-gradient(90deg,#f1f0f7 25%,#e9e7f3 50%,#f1f0f7 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+.skel-img{aspect-ratio:3/4}.skel-line{height:12px;border-radius:6px;margin:12px 14px 0}
+.wa-float{position:fixed;right:16px;bottom:18px;width:54px;height:54px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:90;text-decoration:none}
+body.admin-mode .wa-float{display:none}
+.sticky-buy{display:none}
+@media(max-width:759px){
+  .sticky-buy{display:flex;position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #eee;padding:10px 14px;gap:12px;align-items:center;z-index:95;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+  .sticky-buy .sp{font-size:19px;font-weight:800;color:var(--primary);white-space:nowrap}
+  .sticky-buy button{flex:1;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:14px;border-radius:12px;font-weight:800;font-size:15px}
+  #page-detail .detail-wrap{padding-bottom:90px}
+  body:has(#page-detail.active) .wa-float{bottom:84px}
+}
 .empty-shop{grid-column:1/-1;text-align:center;color:var(--gray);padding:40px 10px}
 </style>
 </head>
@@ -320,6 +351,8 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
     <div class="modal-body" id="modal-body"></div>
   </div>
 </div>
+
+<a class="wa-float" href="https://wa.me/918318362335?text=Hi%20Premium%20Store%2C%20I%20need%20help" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">💬</a>
 
 <!-- HEADER -->
 <div class="topbar">🚚 Free Delivery on All Orders — Pay Securely Online</div>
@@ -357,7 +390,12 @@ footer{background:var(--dark);color:#9ca3af;padding:40px 20px 22px;margin-top:20
       <div class="section-title">🛍️ Our Products</div>
       <div class="section-sub">Free delivery on every order</div>
     </div>
-    <div class="products-grid" id="grid-products"></div>
+    <div class="toolbar">
+      <input class="search-box" id="search-q" placeholder="🔍 Search products..." oninput="searchQ=this.value;renderGrid()"/>
+      <select class="sort-box" id="sort-by" onchange="sortBy=this.value;renderGrid()"><option value="new">Newest</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="disc">Biggest Discount</option></select>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="products-grid" id="grid-products"><div class="skel"><div class="skel-img"></div><div class="skel-line"></div><div class="skel-line" style="width:60%;margin-bottom:16px"></div></div><div class="skel"><div class="skel-img"></div><div class="skel-line"></div><div class="skel-line" style="width:60%;margin-bottom:16px"></div></div></div>
   </div>
 
   <div class="why-section">
@@ -636,6 +674,7 @@ function showPage(p) {
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
   window.scrollTo(0, 0);
+  document.body.classList.toggle('admin-mode', p === 'admin' || p === 'admin-login');
   if (p === 'cart') renderCart();
   if (p === 'checkout') renderCheckoutPreview();
   if (p === 'admin') loadAdmin();
@@ -716,10 +755,20 @@ function productCard(p, idx) {
   </div>`;
 }
 
+let searchQ = '', sortBy = 'new', filterCat = '';
 function renderGrid() {
   const g = document.getElementById('grid-products');
+  if (!g) return;
   const vis = products.filter(p => p.published !== false);
-  if (g) g.innerHTML = vis.length ? vis.map((p, i) => productCard(p, i)).join('') : '<div class="empty-shop">Products coming soon!</div>';
+  // category chips
+  const cats = [...new Set(vis.map(p => p.product_type).filter(Boolean))];
+  const chipsEl = document.getElementById('chips');
+  if (chipsEl) chipsEl.innerHTML = cats.length > 1 ? ['', ...cats].map(c => `<button class="chip ${filterCat === c ? 'on' : ''}" onclick="filterCat='${esc(c).replace(/'/g, '')}';renderGrid()">${c ? esc(c) : 'All'}</button>`).join('') : '';
+  let list = vis.filter(p => (!filterCat || p.product_type === filterCat) && (!searchQ || (p.name + ' ' + (p.description || '')).toLowerCase().includes(searchQ.toLowerCase())));
+  if (sortBy === 'low') list.sort((a, b) => a.price - b.price);
+  else if (sortBy === 'high') list.sort((a, b) => b.price - a.price);
+  else if (sortBy === 'disc') list.sort((a, b) => (b.discount || 0) - (a.discount || 0));
+  g.innerHTML = list.length ? list.map((p, i) => productCard(p, i)).join('') : `<div class="empty-shop">${vis.length ? 'No products match your search.' : 'Products coming soon!'}</div>`;
 }
 
 let detailQty = 1;
@@ -756,6 +805,7 @@ function openProduct(id) {
         <button class="btn-buy-large" ${out ? 'disabled' : ''} onclick="detailAdd(true)">${out ? 'Out of Stock' : '⚡ Buy Now'}</button>
       </div>
       <div class="instant-note">🔒 Secured by Cashfree Payments</div>
+      ${out ? '' : `<div class="sticky-buy"><span class="sp">₹${inr(p.price)}</span><button onclick="detailAdd(true)">⚡ Buy Now</button></div>`}
     </div>`;
   showPage('detail');
 }

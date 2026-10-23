@@ -676,6 +676,8 @@ async function init() {
   updateCartUI();
   checkPaymentReturn();
   const urlParams = new URLSearchParams(window.location.search);
+  const deepId = urlParams.get('product');
+  if (deepId && products.find(x => x.id == deepId)) openProduct(deepId);
   if (urlParams.get('panel') === 'owner123') showPage('admin-login');
 }
 
@@ -818,10 +820,27 @@ function openProduct(id) {
         <button class="btn-buy-large" ${out ? 'disabled' : ''} onclick="detailAdd(true)">${out ? 'Out of Stock' : '⚡ Buy Now'}</button>
       </div>
       <div class="instant-note">🔒 Secured by Cashfree Payments</div>
+      <button class="btn-outline" style="margin-top:12px;padding:12px;font-size:14px" onclick="shareProduct('${esc(p.id)}')">📤 Share this product</button>
       ${out ? '' : `<div class="sticky-buy"><span class="sp">₹${inr(p.price)}</span><button onclick="detailAdd(true)">⚡ Buy Now</button></div>`}
     </div>`;
   showPage('detail');
 }
+
+function productLink(id, ad) {
+  const base = location.origin + location.pathname + '?product=' + encodeURIComponent(id);
+  return ad ? base + '&utm_source=meta&utm_medium=paid&utm_campaign=' + encodeURIComponent(id.toString().slice(0, 8)) : base;
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+  try { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); return true; } catch (e) { return false; }
+}
+async function shareProduct(id) {
+  const p = products.find(x => x.id == id); if (!p) return;
+  const url = productLink(id, false);
+  if (navigator.share) { try { await navigator.share({ title: p.name, text: p.name + ' — ₹' + inr(p.price), url }); return; } catch (e) { return; } }
+  toast((await copyText(url)) ? '🔗 Link copied!' : 'Copy failed');
+}
+async function copyAdLink(id) { toast((await copyText(productLink(id, true))) ? '🔗 Ad link copied!' : 'Copy failed'); }
 
 function swapImg(el) {
   document.getElementById('detail-main').src = el.src;
@@ -1371,6 +1390,7 @@ function renderAdminProducts() {
         <div class="product-admin-price">₹${inr(p.price)} <span style="color:#9ca3af;font-size:11px;font-weight:600">• ${p.stock != null && p.stock < TRACK_LIMIT ? p.stock + ' in stock' : 'unlimited'}</span></div>
         <div style="display:flex;gap:6px">
           <button class="save-btn" style="flex:1;padding:7px" onclick="editProduct('${esc(p.id)}')">✏️ Edit</button>
+          <button class="save-btn" style="flex:1;padding:7px;background:#2563eb" onclick="copyAdLink('${esc(p.id)}')">🔗 Ad link</button>
           <button class="delete-btn" style="flex:1" onclick="deleteProduct('${esc(p.id)}')">🗑️</button>
         </div>
       </div>

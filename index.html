@@ -733,8 +733,7 @@ body.sale-on .pcard:has(.disc-badge)::after{content:"SALE";position:absolute;top
   var topbar = $('.topbar');
   var bar = mk('div', 'sv-bar');
   var line = '<span>' + esc(SALE.emoji) + ' <b>' + esc(SALE.name) + '</b> — ' + esc(SALE.tagline) + '</span>';
-  bar.innerHTML = '<div class="sv-track">' + line + line + line + line + '</div><div class="sv-bcd"></div>';
-  $('.sv-bcd', bar).appendChild(buildCountdown(true));
+  bar.innerHTML = '<div class="sv-track">' + line + line + line + line + '</div>';
   if (topbar) topbar.style.display = 'none';
   (topbar && topbar.parentNode ? topbar.parentNode.insertBefore(bar, topbar) : document.body.insertBefore(bar, document.body.firstChild));
   els.push(bar);

@@ -345,6 +345,18 @@ body.admin-mode .wa-float{display:none}
   body:has(#page-detail.active) .wa-float{bottom:84px}
 }
 .empty-shop{grid-column:1/-1;text-align:center;color:var(--gray);padding:40px 10px}
+
+.stars{color:#f59e0b;letter-spacing:1px}.stars .off{color:#d1d5db}
+.pc-rate{font-size:12px;color:#6b7280;margin-bottom:6px;font-weight:600}
+.rev-box{grid-column:1/-1;border-top:1px solid #e5e7eb;padding-top:22px}
+.rev-box h3{font-size:19px;font-weight:800;margin-bottom:4px}
+.rev-sum{font-size:14px;color:#4b5563;margin-bottom:14px}
+.rev{background:#f9fafb;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.rev b{font-size:14px}.rev small{color:#9ca3af;margin-left:6px}.rev p{font-size:14px;color:#374151;margin-top:4px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.rev-form{background:#faf5ff;border:1px solid #e9d5ff;border-radius:14px;padding:14px;margin-top:14px}
+.rev-form input,.rev-form textarea{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:10px;font:inherit;font-size:14px;margin-bottom:8px}
+.rev-pick{display:flex;gap:4px;margin-bottom:8px}.rev-pick button{background:none;font-size:30px;color:#d1d5db;padding:0 2px;line-height:1}.rev-pick button.on{color:#f59e0b}
+.rev-form .btn-buy{width:100%}
 </style>
 </head>
 <body>
@@ -540,6 +552,7 @@ body.admin-mode .wa-float{display:none}
       <button class="admin-tab" id="tab-analytics" onclick="adminTab('analytics')">📈 Analytics</button>
       <button class="admin-tab" id="tab-orders" onclick="adminTab('orders')">📦 Orders</button>
       <button class="admin-tab" id="tab-products" onclick="adminTab('products')">🛍️ Products</button>
+      <button class="admin-tab" id="tab-reviews" onclick="adminTab('reviews')">⭐ Reviews</button>
     </div>
     <div class="admin-body">
       <div id="admin-dashboard">
@@ -576,6 +589,7 @@ body.admin-mode .wa-float{display:none}
           <div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>City</th><th>Amount</th><th>Payment</th><th>Status</th><th>Update</th><th>Action</th></tr></thead><tbody id="all-orders"></tbody></table></div>
         </div>
       </div>
+      <div id="admin-reviews" style="display:none"><div class="admin-card"><h3 style="margin-bottom:12px">Customer Reviews</h3><div id="admin-reviews-list">Loading…</div></div></div>
       <div id="admin-products" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h3 style="color:#fff;font-size:16px;font-weight:700">Products</h3>
@@ -930,7 +944,7 @@ async function init() {
   // show last-known products instantly, then refresh from the server
   try { const c = JSON.parse(localStorage.getItem('es_products') || 'null'); if (Array.isArray(c) && c.length) { products = c; renderGrid(); } } catch (e) {}
   await loadProducts();
-  renderGrid();
+  renderGrid(); loadRatings();
   updateCartUI();
   checkPaymentReturn();
   const urlParams = new URLSearchParams(window.location.search);
@@ -1020,6 +1034,7 @@ function productCard(p, idx) {
     <div class="pcard-body">
       <div class="pcard-name">${esc(p.name)}</div>
       <div class="pcard-desc">${esc(p.description || '')}</div>
+      ${ratingLine(p.id)}
       <div class="pcard-price"><span class="price">₹${inr(p.price)}</span>${disc > 0 ? `<span class="old">₹${inr(orig)}</span>` : ''}</div>
       <button class="btn-buy" ${out ? 'disabled' : ''} onclick="event.stopPropagation();addToCart('${esc(p.id)}')">${out ? 'Out of Stock' : '🛒 Add to Cart'}</button>
     </div>
@@ -1082,6 +1097,8 @@ function openProduct(id) {
       ${out ? '' : `<div class="sticky-buy"><span class="sp">₹${inr(p.price)}</span><button onclick="detailAdd(true)">⚡ Buy Now</button></div>`}
     </div>`;
   showPage('detail');
+  const rb = document.createElement('div'); rb.className = 'rev-box'; rb.id = 'rev-box';
+  document.getElementById('detail-content').appendChild(rb); loadReviews(p.id);
 }
 
 function productLink(id, ad) {
@@ -1506,11 +1523,12 @@ function viewOrder(orderId) {
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
 function adminTab(tab) {
-  ['dashboard', 'analytics', 'orders', 'products'].forEach(t => {
+  ['dashboard', 'analytics', 'orders', 'products', 'reviews'].forEach(t => {
     document.getElementById('admin-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'analytics') renderAnalytics();
+  if (tab === 'reviews') loadAdminReviews();
 }
 
 function toggleProductForm(forceOpen) {
@@ -1696,6 +1714,63 @@ function renderAnalytics() {
   document.getElementById('an-top-products').innerHTML = top.map(([name, d], i) => `
     <tr><td>${i + 1}</td><td>${esc(name)}</td><td>${d.units}</td><td>₹${inr(d.revenue)}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:20px">No sales data yet</td></tr>';
 }
+
+/* ---------------- Reviews ---------------- */
+let ratings = {};      // product_id -> {n, avg}
+let revPick = 5;
+const starsHtml = v => { const f = Math.round(v); return '<span class="stars">' + '★'.repeat(f) + '<span class="off">' + '★'.repeat(5 - f) + '</span></span>'; };
+function ratingLine(id) { const r = ratings[id]; return r ? `<div class="pc-rate">${starsHtml(r.avg)} ${r.avg.toFixed(1)} (${r.n})</div>` : ''; }
+async function loadRatings() {
+  try {
+    const rows = await sb.get('digital_reviews', 'approved=eq.true&select=product_id,rating');
+    if (!Array.isArray(rows)) return;
+    const m = {};
+    rows.forEach(x => { const o = m[x.product_id] || (m[x.product_id] = { n: 0, s: 0 }); o.n++; o.s += x.rating; });
+    ratings = {}; Object.keys(m).forEach(k => ratings[k] = { n: m[k].n, avg: m[k].s / m[k].n });
+    renderGrid();
+  } catch (e) {}
+}
+async function loadReviews(pid) {
+  const box = document.getElementById('rev-box'); if (!box) return;
+  let rows = [];
+  try { const r = await sb.get('digital_reviews', 'product_id=eq.' + encodeURIComponent(pid) + '&approved=eq.true&select=name,rating,comment,created_at'); if (Array.isArray(r)) rows = r; } catch (e) {}
+  if (!document.getElementById('rev-box') || !currentProduct || currentProduct.id != pid) return;
+  const avg = rows.length ? rows.reduce((s, x) => s + x.rating, 0) / rows.length : 0;
+  revPick = 5;
+  document.getElementById('rev-box').innerHTML = `<h3>Customer Reviews</h3>
+    <div class="rev-sum">${rows.length ? `${starsHtml(avg)} <b>${avg.toFixed(1)}</b> out of 5 · ${rows.length} review${rows.length > 1 ? 's' : ''}` : 'No reviews yet — be the first to review!'}</div>
+    ${rows.map(x => `<div class="rev">${starsHtml(x.rating)} <b>${esc(x.name)}</b><small>${esc((x.created_at || '').slice(0, 10))}</small><p>${esc(x.comment)}</p></div>`).join('')}
+    <div class="rev-form"><b style="font-size:15px">✍️ Write a review</b>
+      <div class="rev-pick" id="rev-pick">${[1, 2, 3, 4, 5].map(i => `<button type="button" class="on" onclick="pickStar(${i})" aria-label="${i} star">★</button>`).join('')}</div>
+      <input id="rev-name" maxlength="60" placeholder="Your name"/>
+      <textarea id="rev-text" rows="3" maxlength="600" placeholder="Share your experience with this product"></textarea>
+      <button class="btn-buy" type="button" id="rev-btn" onclick="submitReview('${esc(pid)}')">Submit Review</button>
+      <div style="font-size:12px;color:#6b7280;margin-top:6px">Reviews appear after approval.</div></div>`;
+}
+function pickStar(n) { revPick = n; document.querySelectorAll('#rev-pick button').forEach((b, i) => b.classList.toggle('on', i < n)); }
+async function submitReview(pid) {
+  const name = document.getElementById('rev-name').value.trim(), comment = document.getElementById('rev-text').value.trim();
+  if (!name || !comment) return toast('Please enter your name and review');
+  const btn = document.getElementById('rev-btn'); btn.disabled = true;
+  const ok = await sb.post('digital_reviews', { product_id: pid, name, rating: revPick, comment });
+  btn.disabled = false;
+  if (!ok) return toast('Could not submit. Please try again.');
+  document.getElementById('rev-name').value = ''; document.getElementById('rev-text').value = '';
+  toast('✅ Thanks! Your review will appear after approval.');
+}
+let adminReviews = [];
+async function loadAdminReviews() {
+  const el = document.getElementById('admin-reviews-list');
+  const r = await sb.rpc('admin_list_reviews', { p_password: adminPw });
+  if (!Array.isArray(r)) { el.innerHTML = 'Reviews not set up yet — run reviews.sql in Supabase.'; return; }
+  adminReviews = r;
+  el.innerHTML = r.length ? r.map(x => `<div class="rev" style="background:#f3f4f6">${starsHtml(x.rating)} <b>${esc(x.name)}</b> <small>on ${esc(x.product_name || '—')} · ${esc((x.created_at || '').slice(0, 10))}</small>
+      <span style="float:right;font-size:12px;font-weight:700;color:${x.approved ? '#16a34a' : '#d97706'}">${x.approved ? 'LIVE' : 'PENDING'}</span><p>${esc(x.comment)}</p>
+      <div style="margin-top:8px;display:flex;gap:8px"><button class="btn-outline" style="width:auto;padding:6px 12px;font-size:13px" onclick="setReview('${esc(x.id)}',${!x.approved})">${x.approved ? 'Hide' : '✅ Approve'}</button>
+      <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:13px;color:#dc2626;border-color:#dc2626" onclick="delReview('${esc(x.id)}')">Delete</button></div></div>`).join('') : 'No reviews yet.';
+}
+async function setReview(id, v) { const ok = await sb.rpc('admin_set_review', { p_password: adminPw, p_id: id, p_approved: v }); toast(ok ? 'Updated' : 'Failed'); loadAdminReviews(); loadRatings(); }
+async function delReview(id) { if (!confirm('Delete this review?')) return; const ok = await sb.rpc('admin_delete_review', { p_password: adminPw, p_id: id }); toast(ok ? 'Deleted' : 'Failed'); loadAdminReviews(); loadRatings(); }
 
 init();
 </script>

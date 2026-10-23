@@ -613,6 +613,257 @@ body.admin-mode .wa-float{display:none}
 </div>
 
 <script>
+/* =====================================================================
+   SALE EVENT SYSTEM  —  one file, no libraries
+   Sale badalne par SIRF neeche wala SALE object badlo.
+    ===================================================================== */
+const SALE = {
+  name: "Mega Sale",
+  tagline: "Flat 50% OFF + Free Delivery",
+  code: "SALE20",
+  codeText: "20% extra off",
+  endDate: "2026-12-31T23:59:59",
+  colors: { primary: "#6d28d9", accent: "#f59e0b" },
+  emoji: "🔥",
+  particles: "confetti",   // confetti | snow | hearts | stars | balloons | none
+  uptoOff: 70,             // "UPTO 70% OFF" badge ka number
+  popupEveryHours: 12      // popup dobara kitne ghante baad dikhe
+};
+
+(function () {
+  'use strict';
+  var END = new Date(SALE.endDate).getTime();
+  if (!isFinite(END) || Date.now() >= END) return;           // sale khatam / galat date -> kuch nahi dikhega
+
+  var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = [];                                              // jo bhi hum page mein daalte hain (cleanup ke liye)
+  var timers = [];
+  var raf = 0, ended = false;
+  function $(s, r) { return (r || document).querySelector(s); }
+  function mk(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  /* ---------------- CSS ---------------- */
+  var css = '\
+:root{--sv-1:' + SALE.colors.primary + ';--sv-2:' + SALE.colors.accent + '}\
+.sv-bar{background:linear-gradient(90deg,var(--sv-1),color-mix(in srgb,var(--sv-1) 60%,#000),var(--sv-1));color:#fff;overflow:hidden;white-space:nowrap;font-size:13px;font-weight:700;padding:9px 0;position:relative;z-index:101}\
+.sv-track{display:inline-flex;animation:sv-marq 22s linear infinite;will-change:transform}\
+.sv-track span{padding:0 28px}\
+.sv-track b{color:var(--sv-2)}\
+@keyframes sv-marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}\
+.sv-hero{position:relative;overflow:hidden;color:#fff;text-align:center;padding:34px 18px 30px;background:linear-gradient(135deg,color-mix(in srgb,var(--sv-1) 55%,#000) 0%,var(--sv-1) 55%,color-mix(in srgb,var(--sv-2) 70%,var(--sv-1)) 130%)}\
+.sv-hero::before{content:"";position:absolute;inset:-40% -20% auto auto;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%)}\
+.sv-hero>*{position:relative}\
+.sv-upto{display:inline-block;background:var(--sv-2);color:#1a1a1a;font-weight:900;font-size:13px;letter-spacing:.4px;padding:7px 16px;border-radius:30px;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:sv-bounce 1.6s ease-in-out infinite}\
+@keyframes sv-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}\
+.sv-hero h2{font-size:34px;line-height:1.15;font-weight:900;margin:14px 0 6px;text-shadow:0 2px 14px rgba(0,0,0,.25)}\
+.sv-hero p{font-size:16px;font-weight:600;opacity:.95;margin-bottom:16px}\
+.sv-cta{display:inline-block;background:#fff;color:var(--sv-1);font-weight:900;font-size:15px;padding:14px 34px;border-radius:12px;margin-top:18px;animation:sv-pulse 1.8s ease-in-out infinite;cursor:pointer;border:0}\
+@keyframes sv-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,255,255,.6)}50%{transform:scale(1.06);box-shadow:0 0 0 14px rgba(255,255,255,0)}}\
+.sv-cd{display:inline-flex;align-items:center;gap:6px;direction:ltr}\
+.sv-unit{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px 10px;min-width:54px;font-weight:900;font-size:22px;line-height:1;font-variant-numeric:tabular-nums;perspective:200px}\
+.sv-unit i{font-style:normal;font-size:12px;font-weight:700;opacity:.8;margin-left:2px}\
+.sv-unit.flip b{display:inline-block;animation:sv-flip .45s ease}\
+@keyframes sv-flip{0%{transform:rotateX(-90deg);opacity:0}100%{transform:rotateX(0);opacity:1}}\
+.sv-sep{font-weight:900;font-size:20px;opacity:.7}\
+.sv-small .sv-unit{font-size:15px;padding:5px 7px;min-width:42px}\
+#sv-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:85}\
+.sv-ov{position:fixed;inset:0;background:rgba(10,8,24,.72);z-index:300;display:flex;align-items:center;justify-content:center;padding:18px;animation:sv-fade .25s ease}\
+@keyframes sv-fade{from{opacity:0}to{opacity:1}}\
+.sv-modal{position:relative;background:#fff;border-radius:22px;max-width:380px;width:100%;overflow:hidden;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:sv-pop .4s cubic-bezier(.2,1.4,.4,1)}\
+@keyframes sv-pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}\
+.sv-mhead{background:linear-gradient(135deg,color-mix(in srgb,var(--sv-1) 55%,#000),var(--sv-1));color:#fff;padding:26px 20px 20px}\
+.sv-mhead .em{font-size:44px;display:block;margin-bottom:6px}\
+.sv-mhead h3{font-size:24px;font-weight:900}\
+.sv-mhead p{opacity:.92;font-size:14px;font-weight:600;margin-top:4px}\
+.sv-mbody{padding:20px;color:#1f2937}\
+.sv-mbody small{display:block;color:#6b7280;font-size:13px;margin-bottom:12px;font-weight:600}\
+.sv-code{display:flex;gap:8px;align-items:stretch;border:2px dashed var(--sv-1);border-radius:14px;padding:6px;background:#faf5ff}\
+.sv-code code{flex:1;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;letter-spacing:2px;color:var(--sv-1);font-family:ui-monospace,monospace}\
+.sv-copy{background:var(--sv-1);color:#fff;font-weight:800;font-size:14px;padding:12px 18px;border-radius:10px;border:0;cursor:pointer}\
+.sv-shop{display:block;width:100%;margin-top:14px;background:var(--sv-2);color:#1a1a1a;font-weight:900;font-size:15px;padding:14px;border-radius:12px;border:0;cursor:pointer}\
+.sv-x{position:absolute;top:10px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.25);color:#fff;font-size:20px;line-height:30px;border:0;cursor:pointer}\
+body.sale-on .pcard{position:relative}\
+body.sale-on .pcard:has(.disc-badge)::after{content:"SALE";position:absolute;top:46px;left:0;z-index:3;background:linear-gradient(90deg,#dc2626,#ef4444);color:#fff;font-size:11px;font-weight:900;letter-spacing:1px;padding:5px 16px 5px 10px;clip-path:polygon(0 0,100% 0,88% 50%,100% 100%,0 100%);box-shadow:0 3px 8px rgba(0,0,0,.2)}\
+@media(max-width:480px){.sv-hero h2{font-size:27px}.sv-unit{font-size:18px;min-width:46px;padding:7px 8px}.sv-track span{padding:0 18px}}\
+@media (prefers-reduced-motion:reduce){\
+ .sv-track{animation:none;display:block;text-align:center;overflow:hidden;text-overflow:ellipsis}\
+ .sv-track span+span{display:none}\
+ .sv-upto,.sv-cta,.sv-unit.flip b,.sv-modal,.sv-ov{animation:none!important}\
+}';
+  var st = mk('style'); st.id = 'sv-style'; st.textContent = css; document.head.appendChild(st); els.push(st);
+
+  /* ---------------- countdown ---------------- */
+  var cds = [];
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function buildCountdown(small) {
+    var wrap = mk('div', 'sv-cd' + (small ? ' sv-small' : ''));
+    wrap.setAttribute('role', 'timer'); wrap.setAttribute('aria-label', 'Sale ends in');
+    var units = ['d', 'h', 'm', 's'].map(function (u, i) {
+      var box = mk('div', 'sv-unit', '<b>00</b><i>' + u + '</i>');
+      if (i) wrap.appendChild(mk('span', 'sv-sep', ':'));
+      wrap.appendChild(box); return box;
+    });
+    cds.push(units); return wrap;
+  }
+  function tick() {
+    var left = END - Date.now();
+    if (left <= 0) return endSale();
+    var s = Math.floor(left / 1000);
+    var v = [Math.floor(s / 86400), Math.floor(s % 86400 / 3600), Math.floor(s % 3600 / 60), s % 60];
+    cds.forEach(function (units) {
+      units.forEach(function (box, i) {
+        var b = box.firstChild, t = pad(v[i]);
+        if (b.textContent !== t) {
+          b.textContent = t;
+          if (!REDUCED) { box.classList.remove('flip'); void box.offsetWidth; box.classList.add('flip'); }
+        }
+      });
+    });
+  }
+
+  /* ---------------- 1) announcement bar ---------------- */
+  var topbar = $('.topbar');
+  var bar = mk('div', 'sv-bar');
+  var line = '<span>' + esc(SALE.emoji) + ' <b>' + esc(SALE.name) + '</b> — ' + esc(SALE.tagline) + '</span>';
+  bar.innerHTML = '<div class="sv-track">' + line + line + line + line + '</div>';
+  (topbar && topbar.parentNode ? topbar.parentNode.insertBefore(bar, topbar) : document.body.insertBefore(bar, document.body.firstChild));
+  els.push(bar);
+
+  /* ---------------- 2) hero banner (+ 7) UPTO badge) ---------------- */
+  var home = $('#page-home');
+  var hero = mk('section', 'sv-hero');
+  hero.innerHTML = '<span class="sv-upto">UPTO ' + esc(SALE.uptoOff) + '% OFF</span>' +
+    '<h2>' + esc(SALE.emoji) + ' ' + esc(SALE.name) + '</h2><p>' + esc(SALE.tagline) + '</p><div id="sv-hero-cd"></div>' +
+    '<button class="sv-cta" type="button">Shop Now →</button>';
+  $('#sv-hero-cd', hero).appendChild(buildCountdown(false));
+  $('.sv-cta', hero).addEventListener('click', function () {
+    var t = document.getElementById('products-section'); if (t) t.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+  });
+  if (home) home.insertBefore(hero, home.firstChild); else document.body.appendChild(hero);
+  els.push(hero);
+  document.body.classList.add('sale-on');
+
+  tick(); timers.push(setInterval(tick, 1000));
+
+  /* ---------------- 3) canvas particles ---------------- */
+  var cv, ctx, parts = [], W = 0, H = 0, DPR = 1, sprites = [], lastT = 0, kind = SALE.particles;
+  function sprite(draw, w, h) {
+    var c = document.createElement('canvas'), r = Math.min(window.devicePixelRatio || 1, 2);
+    c.width = w * r; c.height = h * r; var x = c.getContext('2d'); x.scale(r, r); draw(x, w, h); c.sw = w; c.sh = h; return c;
+  }
+  function makeSprites() {
+    var cols = [SALE.colors.primary, SALE.colors.accent, '#ef4444', '#22c55e', '#3b82f6', '#ec4899', '#ffffff'];
+    var out = [];
+    if (kind === 'confetti') cols.forEach(function (c) { out.push(sprite(function (x, w, h) { x.fillStyle = c; x.fillRect(0, 0, w, h); }, 9, 14)); });
+    else if (kind === 'snow') [5, 8, 12].forEach(function (r) { out.push(sprite(function (x, w) { var g = x.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(w / 2, w / 2, w / 2, 0, 7); x.fill(); }, r * 2, r * 2)); });
+    else if (kind === 'hearts') ['#ef4444', '#ec4899', '#f43f5e', SALE.colors.accent].forEach(function (c) { out.push(sprite(function (x, w) { x.fillStyle = c; x.beginPath(); x.moveTo(w / 2, w * .9); x.bezierCurveTo(-w * .2, w * .45, w * .1, -w * .1, w / 2, w * .3); x.bezierCurveTo(w * .9, -w * .1, w * 1.2, w * .45, w / 2, w * .9); x.fill(); }, 18, 18)); });
+    else if (kind === 'stars') [SALE.colors.accent, '#fde68a', '#ffffff', SALE.colors.primary].forEach(function (c) { out.push(sprite(function (x, w) { x.fillStyle = c; x.beginPath(); for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? w * .2 : w * .48; x[i ? 'lineTo' : 'moveTo'](w / 2 + Math.cos(a) * r, w / 2 + Math.sin(a) * r); } x.closePath(); x.fill(); }, 20, 20)); });
+    else if (kind === 'balloons') cols.slice(0, 6).forEach(function (c) { out.push(sprite(function (x, w, h) { x.fillStyle = c; x.beginPath(); x.ellipse(w / 2, h * .34, w * .42, h * .32, 0, 0, 7); x.fill(); x.beginPath(); x.moveTo(w / 2 - 4, h * .65); x.lineTo(w / 2 + 4, h * .65); x.lineTo(w / 2, h * .72); x.fill(); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 1; x.beginPath(); x.moveTo(w / 2, h * .72); x.quadraticCurveTo(w / 2 + 6, h * .85, w / 2, h); x.stroke(); x.fillStyle = 'rgba(255,255,255,.35)'; x.beginPath(); x.ellipse(w * .36, h * .24, w * .08, h * .12, -.5, 0, 7); x.fill(); }, 30, 56)); });
+    return out;
+  }
+  function spawn(p, initial) {
+    var rise = kind === 'balloons';
+    p.s = sprites[(Math.random() * sprites.length) | 0];
+    p.x = Math.random() * W;
+    p.y = initial ? Math.random() * H : (rise ? H + 60 : -30);
+    var base = kind === 'snow' ? 28 : rise ? 45 : kind === 'confetti' ? 95 : 60;
+    p.vy = (base + Math.random() * base * .7) * (rise ? -1 : 1);
+    p.vx = (Math.random() - .5) * 30;
+    p.rot = Math.random() * 6.28; p.vr = (Math.random() - .5) * (kind === 'confetti' ? 7 : 2);
+    p.ph = Math.random() * 6.28; p.sw = 12 + Math.random() * 28;
+    p.sc = kind === 'snow' ? .5 + Math.random() * .7 : .7 + Math.random() * .6;
+    return p;
+  }
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, W0() < 640 ? 1.5 : 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  function W0() { return window.innerWidth; }
+  function initParticles() {
+    if (REDUCED || !kind || kind === 'none' || !('getContext' in document.createElement('canvas'))) return;
+    cv = mk('canvas'); cv.id = 'sv-canvas'; cv.setAttribute('aria-hidden', 'true'); document.body.appendChild(cv); els.push(cv);
+    ctx = cv.getContext('2d'); sprites = makeSprites(); if (!sprites.length) return;
+    resize(); window.addEventListener('resize', resize);
+    var n = window.innerWidth < 640 ? 22 : 55;                  // mobile par kam particles
+    for (var i = 0; i < n; i++) parts.push(spawn({}, true));
+    lastT = performance.now(); raf = requestAnimationFrame(loop);
+  }
+  function loop(t) {
+    if (ended) return;
+    var onHome = document.body.classList.contains('on-home');   // checkout/admin par particles band (fast + distraction-free)
+    if (!onHome || document.hidden) { cv.style.display = 'none'; lastT = t; raf = setTimeout(function () { raf = requestAnimationFrame(loop); }, 300); return; }
+    cv.style.display = 'block';
+    var dt = Math.min((t - lastT) / 1000, .05); lastT = t;
+    ctx.clearRect(0, 0, W, H);
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      p.ph += dt * 1.6; p.y += p.vy * dt; p.x += (p.vx + Math.sin(p.ph) * p.sw) * dt; p.rot += p.vr * dt;
+      if (p.vy > 0 ? p.y > H + 40 : p.y < -70) spawn(p, false);
+      if (p.x < -40) p.x = W + 20; else if (p.x > W + 40) p.x = -20;
+      ctx.save(); ctx.translate(p.x, p.y);
+      if (kind === 'confetti') ctx.rotate(p.rot); else if (kind !== 'snow' && kind !== 'balloons') ctx.rotate(Math.sin(p.rot) * .5); else if (kind === 'balloons') ctx.rotate(Math.sin(p.ph) * .12);
+      var sx = kind === 'confetti' ? Math.abs(Math.cos(p.rot * 1.3)) * .9 + .1 : 1;   // confetti "flip" effect
+      ctx.scale(p.sc * sx, p.sc);
+      ctx.drawImage(p.s, -p.s.sw / 2, -p.s.sh / 2, p.s.sw, p.s.sh);
+      ctx.restore();
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  initParticles();
+
+  /* ---------------- 5) popup with coupon ---------------- */
+  var KEY = 'sale_popup_' + SALE.code + '_' + SALE.endDate;
+  function copy(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    return new Promise(function (res, rej) { try { var t = mk('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); res(); } catch (e) { rej(e); } });
+  }
+  function showPopup() {
+    var last = parseInt(store(KEY) || '0', 10);
+    if (last && Date.now() - last < SALE.popupEveryHours * 3600 * 1000) return;
+    var q = location.search;
+    if (/[?&](panel|order|product)=/.test(q)) return;            // admin / payment return / deep link par popup nahi
+    if (!document.body.classList.contains('on-home')) return;
+    store(KEY, String(Date.now()));
+    var prevFocus = document.activeElement;
+    var ov = mk('div', 'sv-ov'); ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', SALE.name);
+    ov.innerHTML = '<div class="sv-modal"><button class="sv-x" type="button" aria-label="Close">×</button>' +
+      '<div class="sv-mhead"><span class="em">' + esc(SALE.emoji) + '</span><h3>' + esc(SALE.name) + ' is LIVE!</h3><p>' + esc(SALE.tagline) + '</p></div>' +
+      '<div class="sv-mbody"><small>Use code at checkout — ' + esc(SALE.codeText) + '</small>' +
+      '<div class="sv-code"><code>' + esc(SALE.code) + '</code><button class="sv-copy" type="button">Copy</button></div>' +
+      '<button class="sv-shop" type="button">Start Shopping →</button></div></div>';
+    document.body.appendChild(ov);
+    function close() { ov.remove(); document.removeEventListener('keydown', onKey); if (prevFocus && prevFocus.focus) try { prevFocus.focus(); } catch (e) {} }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+    $('.sv-x', ov).addEventListener('click', close);
+    $('.sv-shop', ov).addEventListener('click', function () { close(); var t = document.getElementById('products-section'); if (t) t.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' }); });
+    var cb = $('.sv-copy', ov);
+    cb.addEventListener('click', function () {
+      copy(SALE.code).then(function () { cb.textContent = 'Copied ✓'; }, function () { cb.textContent = SALE.code; });
+      setTimeout(function () { cb.textContent = 'Copy'; }, 2000);
+    });
+    cb.focus();
+  }
+  timers.push(setTimeout(showPopup, 1200));
+
+  /* ---------------- 4) sale khatam -> sab hide ---------------- */
+  function endSale() {
+    if (ended) return; ended = true;
+    timers.forEach(function (t) { clearInterval(t); clearTimeout(t); });
+    if (raf) { cancelAnimationFrame(raf); clearTimeout(raf); }
+    window.removeEventListener('resize', resize);
+    els.forEach(function (e) { if (e && e.remove) e.remove(); });
+    var ov = $('.sv-ov'); if (ov) ov.remove();
+    document.body.classList.remove('sale-on');
+    cds = [];
+  }
+  window.SALE_EVENT = { end: endSale };
+})();
+
 const SUPABASE_URL = 'https://vjcyrkbjrfynjybovuce.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqY3lya2JqcmZ5bmp5Ym92dWNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODkwMTUsImV4cCI6MjA5NDY2NTAxNX0.pgto_fHYOcHe-ysGgUxSHylY2ZBSJvPp6L2TTGEGn_8';
 const API_URL = 'https://premium-store-backend.vercel.app';
